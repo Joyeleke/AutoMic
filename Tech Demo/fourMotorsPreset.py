@@ -1,6 +1,7 @@
 import socket
 import time
 import threading
+import random
 
 # --- Configuration ---
 MOTOR_IPS = [
@@ -152,10 +153,17 @@ if __name__ == "__main__":
         #         print("Invalid choice. Skipping this motor.")
         #         motor_commands.append([]) # Add empty list to maintain order
 
-        steps = [[20000, 0, 0, 0],
+          
+        
+        while 1:
+            steps = [[20000, 0, 0, 0],
                  [0, 20000, 0, 0],
                  [0, 0, 20000, 0],
                  [0, 0, 0, 20000],
+                 [-20000, 0, 0, 0],
+                 [0, -20000, 0, 0],
+                 [0, 0, -20000, 0],
+                 [0, 0, 0, -20000],
                  [20000, 20000, 20000, 20000],
                  [20000, -20000, 20000, -20000],
                  [-20000, 20000, -20000, 20000],
@@ -165,9 +173,12 @@ if __name__ == "__main__":
                  [5000, 5000, 5000, 5000],
                  [5000, 5000, 5000, 5000],
                  [5000, 5000, 5000, 5000],
-                 [5000, 5000, 5000, 5000]   
-        ]
-        while 1:
+                 [5000, 5000, 5000, 5000],
+                 [-10000, -10000, -10000, -10000],
+                 [-10000, -10000, -10000, -10000],
+                 [random.randrange(1, 20000), random.randrange(1, 20000), random.randrange(1, 20000), random.randrange(1, 20000)]
+            ]
+            print(steps[14])
             threads = []
             for j in range(len(steps)):
                 for i, ip in enumerate(MOTOR_IPS):    
@@ -185,8 +196,35 @@ if __name__ == "__main__":
                 time.sleep(1)
 
                 print("\nAll threads have finished execution.")
+            for i, ip in enumerate(MOTOR_IPS):    
+                thread = threading.Thread(
+                    target=control_single_motor, 
+                    args=(ip, move_absolute(0, 3, 100, 100))
+                )
+                threads.append(thread)
+                thread.start()
+
+            print("\nAll motor control threads have been started.")
+
+            for thread in threads:
+                thread.join()
+            time.sleep(2)
+
+            print("\nAll threads have finished execution.")
 
     except ValueError:
         print("Invalid input. Please enter an integer.")
     except KeyboardInterrupt:
+        for i, ip in enumerate(MOTOR_IPS):    
+            thread = threading.Thread(
+                target=control_single_motor, 
+                args=(ip, move_absolute(0, 3, 100, 100))
+            )
+            threads.append(thread)
+            thread.start()
+
+        print("\nAll motor control threads have been started.")
+
+        for thread in threads:
+            thread.join()
         print("\nProgram terminated by user.")
