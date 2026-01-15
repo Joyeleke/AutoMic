@@ -66,6 +66,7 @@ print("WV: ", WV)
 
 print()
 
+#calculate length of the wires using the AAS formula
 UM = (math.sin(math.radians(MVU))) * (VU/(math.sin(math.radians(UMV))))
 VM = math.sin(math.radians(MWV)) * (WV/(math.sin(math.radians(VMW))))
 WM = math.sin(math.radians(MUW)) * (UW/(math.sin(math.radians(UMW))))
