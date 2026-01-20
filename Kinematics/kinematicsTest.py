@@ -4,13 +4,21 @@ def getAngle(a, b, c):
     ang = math.degrees(math.atan2(c[1]-b[1], c[0]-b[0]) - math.atan2(a[1]-b[1], a[0]-b[0]))
     return ang + 360 if ang < 0 else ang
 
+def getDistance(pointA, pointB):
+    return math.sqrt(((pointB[0]-pointA[0])**2)+((pointB[1]-pointA[1])**2))
+
 #these will represent the motors
-motorV = [0, 10]
-motorU = [5, 0]
-motorW = [10, 10]
+motorV = [0, 10, 0]
+motorU = [5, 0, 0]
+motorW = [10, 10, 0]
 
 #the mic position
-mic = [int(input("x position: ")), int(input("y position: "))]
+mic = [
+    float(input("x position: ")), 
+    float(input("y position: ")),
+    float(input("z position: "))
+    ]
+
 print(mic)
 
 #the constant angles
@@ -74,3 +82,5 @@ WM = math.sin(math.radians(MUW)) * (UW/(math.sin(math.radians(UMW))))
 print("UM: ", UM)
 print("VM: ", VM)
 print("WM: ", WM)
+
+print(getDistance(motorU, mic))
