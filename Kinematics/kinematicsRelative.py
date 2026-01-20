@@ -3,24 +3,59 @@ import math
 def getDistance(p1, p2):
     return math.sqrt(((p2[0]-p1[0])**2)+((p2[1]-p1[1])**2)+((p2[2]-p1[2])**2))
 
-m1 = [1,0,0]
-m2 = [0,2,0]
-m3 = [2,2,0]
-m4 = [1, 1, 4]
+step = 0.000005 #one step = 0.0005 cm
 
-mic = [
-    float(input("x position: ")),
-    float(input("y position: ")),
-    float(input("z position: "))
-]
+lastLengths = [-1,-1,-1,-1]
 
-d1 = getDistance(m1, mic)
-d2 = getDistance(m2, mic)
-d3 = getDistance(m3, mic)
-d4 = getDistance(m4, mic)
+m1 = [6.5,13,0]
+m2 = [1,3,0]
+m3 = [12,3,0]
+m4 = [6.5, 6.5, 13]
 
-print()
-print(d1)
-print(d2)
-print(d3)
-print(d4)
+while(1):
+    mic = [
+        float(input("x position: ")),
+        float(input("y position: ")),
+        float(input("z position: "))
+    ]
+
+    d1 = getDistance(m1, mic)
+    d2 = getDistance(m2, mic)
+    d3 = getDistance(m3, mic)
+    d4 = getDistance(m4, mic)
+
+    print()
+    print("wire lengths: ")
+    print(d1)
+    print(d2)
+    print(d3)
+    print(d4)
+
+    if lastLengths[0] != -1:
+        diff1 = lastLengths[0] - d1
+        diff2 = lastLengths[1] - d2
+        diff3 = lastLengths[2] - d3
+        diff4 = lastLengths[3] - d4
+
+        print()
+        print("differences: ")
+        print(diff1)
+        print(diff2)
+        print(diff3)
+        print(diff4)
+        
+
+        steps1 = int(diff1/step)
+        steps2 = int(diff2/step)
+        steps3 = int(diff3/step)
+        steps4 = int(diff4/step)
+        print()
+        print("steps: ")
+        print("motor 1: ", steps1)
+        print("motor 2: ", steps2)
+        print("motor 3: ", steps3)
+        print("motor 4: ", steps4)
+
+
+    lastLengths = [d1, d2, d3, d4]
+    print()
