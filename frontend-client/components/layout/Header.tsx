@@ -1,6 +1,11 @@
 import StatusBar from "@/components/feature/StatusBar";
 
-export default function Header() {
+interface HeaderProps {
+  isConnected: boolean;
+  isMoving: boolean;
+}
+
+export default function Header({ isConnected, isMoving }: HeaderProps) {
   return (
     <header className="flex items-center justify-between">
       <div>
@@ -9,7 +14,7 @@ export default function Header() {
           Ruth Lilly Performance Hall - UIndy Music Department
         </p>
       </div>
-      <StatusBar />
+      <StatusBar isConnected={isConnected} isMoving={isMoving} />
     </header>
   );
 }

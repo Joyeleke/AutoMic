@@ -7,39 +7,27 @@ import {
 } from "@/components/ui/Card";
 import { Button } from "../ui/Button";
 import { PlusIcon } from "lucide-react";
+import { Position } from "@/types/motor";
 
-const presets = [
-  {
-    name: "Solo Classical",
-    description: "Center-front, close spacing",
-    x: 5,
-    y: 2,
-    spacing: 2,
-  },
-  {
-    name: "Big Band",
-    description: "Center stage, wide spacing",
-    x: 5,
-    y: 3.5,
-    spacing: 5,
-  },
-  {
-    name: "Choir Recording",
-    description: "Center-back, wide coverage",
-    x: 5,
-    y: 5,
-    spacing: 6,
-  },
-  {
-    name: "Stereo Pair",
-    description: "Center, standard stereo spacing",
-    x: 5,
-    y: 3.5,
-    spacing: 3,
-  },
+const presets: Position[] = [
+  { x: 5, y: 2, z: 2 },
+  { x: 5, y: 3.5, z: 5 },
+  { x: 5, y: 5, z: 6 },
+  { x: 5, y: 3.5, z: 3 },
 ];
 
-export default function PresetList() {
+const presetNames = [
+  { name: "Solo Classical", description: "Center-front, close spacing" },
+  { name: "Big Band", description: "Center stage, wide spacing" },
+  { name: "Choir Recording", description: "Center-back, wide coverage" },
+  { name: "Stereo Pair", description: "Center, standard stereo spacing" },
+];
+
+interface PresetListProps {
+  onLoadPreset: (position: Position) => void;
+}
+
+export default function PresetList({ onLoadPreset }: PresetListProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -55,21 +43,23 @@ export default function PresetList() {
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        {presets.map((preset) => (
+        {presets.map((preset, index) => (
           <div
-            key={preset.name}
+            key={presetNames[index].name}
             className="flex items-center justify-between p-4 border rounded-lg"
           >
             <div>
-              <h4 className="font-semibold">{preset.name}</h4>
-              <p className="text-sm text-gray-500">{preset.description}</p>
+              <h4 className="font-semibold">{presetNames[index].name}</h4>
+              <p className="text-sm text-gray-500">
+                {presetNames[index].description}
+              </p>
               <div className="flex gap-4 mt-2 text-xs">
                 <span>X: {preset.x}&apos;</span>
                 <span>Y: {preset.y}&apos;</span>
-                <span>Spacing: {preset.spacing}&apos;</span>
+                <span>Z: {preset.z}&apos;</span>
               </div>
             </div>
-            <Button>Load</Button>
+            <Button onClick={() => onLoadPreset(preset)}>Load</Button>
           </div>
         ))}
       </CardContent>

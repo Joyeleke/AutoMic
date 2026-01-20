@@ -7,20 +7,16 @@ import {
 } from "@/components/ui/Card";
 import { Mic2 } from "lucide-react";
 import GridOverlay from "@/components/ui/GridOverlay";
+import { Position } from "@/types/motor";
 
 interface StageViewProps {
-  position?: { x: number; y: number; distance: number };
+  position: Position;
 }
-
-const defaultPosition = { x: 5, y: 3.5, distance: 3 };
-
-export default function StageView({
-  position = defaultPosition,
-}: StageViewProps) {
+export default function StageView({ position }: StageViewProps) {
   const xPercent = (position.x / 10) * 100;
   const yPercent = (position.y / 7) * 100;
 
-  const micSeparation = position.distance / 2; // Half the distance for each mic
+  const micSeparation = position.z / 2;
   const mic1XPercent = ((position.x - micSeparation) / 10) * 100;
   const mic2XPercent = ((position.x + micSeparation) / 10) * 100;
 
@@ -130,10 +126,10 @@ export default function StageView({
             </div>
             <div className="space-y-1 rounded-lg border bg-card p-3">
               <div className="text-xs font-medium text-muted-foreground">
-                Mic Spacing
+                Z Position
               </div>
               <div className="font-mono text-lg font-semibold">
-                {position.distance.toFixed(2)}
+                {position.z.toFixed(2)}
               </div>
               <div className="text-xs text-muted-foreground">
                 feet (1-8&apos;)

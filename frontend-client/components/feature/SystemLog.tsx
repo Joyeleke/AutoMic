@@ -6,13 +6,13 @@ import {
   CardTitle,
 } from "@/components/ui/Card";
 import { Terminal } from "lucide-react";
+import type { LogEntry } from "@/types/motor";
 
-const logEntries = [
-  { time: "2:03:05 PM", message: "Connected to ClearCore controller" },
-  { time: "2:03:08 PM", message: "Disconnected from controller" },
-];
+interface SystemLogProps {
+  logs: LogEntry[];
+}
 
-export default function SystemLog() {
+export default function SystemLog({ logs }: SystemLogProps) {
   return (
     <Card>
       <CardHeader>
@@ -28,18 +28,27 @@ export default function SystemLog() {
       </CardHeader>
       <CardContent>
         <div className="h-[175px] w-full overflow-y-auto rounded-md border bg-muted/30 p-4">
-          {logEntries.length === 0 ? (
+          {logs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No messages yet. System ready.
             </p>
           ) : (
             <div className="space-y-2">
-              {logEntries.map((msg, index) => (
-                <div key={index} className="flex items-center gap-3 text-sm">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {msg.time}
+              {logs.map((entry, index) => (
+                <div
+                  key={index}
+                  className={`flex items-start gap-3 text-sm ${
+                    entry.level === "error"
+                      ? "text-red-600"
+                      : entry.level === "warning"
+                      ? "text-yellow-600"
+                      : "text-foreground"
+                  }`}
+                >
+                  <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                    {entry.time}
                   </span>
-                  <span className="text-foreground">{msg.message}</span>
+                  <span className="flex-1">{entry.message}</span>
                 </div>
               ))}
             </div>
