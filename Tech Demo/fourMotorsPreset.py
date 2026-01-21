@@ -84,32 +84,6 @@ def get_status():
     """Generates a command list to get the drive status."""
     return ["RS"]
 
-# COMMAND_BANK = {
-#     "1": {
-#         "name": "Move to Absolute Position",
-#         "function": move_absolute,
-#         "requires_input": True,
-#         "prompt_position": "Enter the target absolute position: ",
-#         "prompt_speed": "Enter the motor speed: ",
-#         "prompt_accel": "Enter the rate of acceleration: ",
-#         "prompt_decel": "Enter the rate of deceleration: "
-#     },
-#     "2": {
-#         "name": "Move to Relative Position",
-#         "function": move_relative,
-#         "requires_input": True,
-#         "prompt_position": "Enter the target absolute position: ",
-#         "prompt_speed": "Enter the motor speed: ",
-#         "prompt_accel": "Enter the rate of acceleration: ",
-#         "prompt_decel": "Enter the rate of deceleration: "
-#     },
-#     "3": {
-#         "name": "Get Drive Status",
-#         "function": get_status,
-#         "requires_input": False
-#     }
-# }
-
 def control_single_motor(ip_address, commands):
     """The function that each thread will run to control one motor."""
     print(f"Thread for motor {ip_address} starting...")
@@ -128,33 +102,6 @@ def control_single_motor(ip_address, commands):
 
 if __name__ == "__main__":
     try:
-        # motor_commands = []
-        # for i, ip in enumerate(MOTOR_IPS):
-        #     _print(f"\n--- Select a command for motor {i + 1} ({ip}) ---")
-        #     for key, value in COMMAND_BANK.items():
-        #         print(f"{key}: {value['name']}")
-            
-        #     choice = input("Enter your choice: ")
-            
-        #     if choice in COMMAND_BANK:
-        #         commandinfo = COMMAND_BANK[choice]
-        #         commands = []
-        #         if command_info["requires_input"]:
-        #             position = input(command_info["prompt_position"])
-        #             speed = input(command_info["prompt_speed"])
-        #             accel = input(command_info["prompt_accel"])
-        #             decel = input(command_info["prompt_decel"])
-        #             commands = command_info["function"](position, speed, accel, decel)
-        #         else:
-        #             commands = command_info["function"]()
-                
-        #         motor_commands.append(commands)
-        #     else:
-        #         print("Invalid choice. Skipping this motor.")
-        #         motor_commands.append([]) # Add empty list to maintain order
-
-          
-        
         while 1:
             steps = [[20000, 0, 0, 0],
                  [0, 20000, 0, 0],
