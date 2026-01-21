@@ -48,6 +48,11 @@ class CommandSequence:
         ]
 
     @staticmethod
-    def get_status() -> List[str]:
-        """Generates a command list to get the drive status."""
-        return [SCLCommands.REQUEST_STATUS]
+    def get_status() -> str:
+        """Gets the drive status."""
+        return SCLCommands.REQUEST_STATUS
+
+    @staticmethod
+    def stop() -> str:
+        """Stops the drive."""
+        return SCLCommands.STOP

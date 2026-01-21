@@ -14,17 +14,14 @@ class MockKinematicsSolver:
 
         # Placeholder logic for kinematics solving
         motor_positions = {
-            "motor1": x * 100 + z * 50,
-            "motor2": y * 100 + z * 50,
-            "motor3": (x + y) * 100,
-            "motor4": z * 100
+            "motor2": 1000000,
         }
 
         # Build command dictionary
         command_map = {}
         for motor_name, position in motor_positions.items():
-            command_map[motor_name] = CommandSequence.move_absolute(
-                position=position,
+            command_map[motor_name] = CommandSequence.move_relative(
+                position,
                 speed=motor_config.default_speed,
                 accel=motor_config.default_accel,
                 decel=motor_config.default_decel

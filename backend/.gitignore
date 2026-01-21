@@ -1,3 +1,5 @@
 .pycache
 __pycache__
 .env
+.venv/
+my_todo.txt

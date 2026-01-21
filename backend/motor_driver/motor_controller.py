@@ -3,18 +3,19 @@ Motor controller for coordinating multiple motors.
 """
 
 import threading
-from typing import Dict, List, Optional
+from typing import Dict, List
 from .motor import Motor
-from .config import DEFAULT_MOTOR_CONFIG
+from .config import MotorSettings
+from .commands import CommandSequence
 
 class MotorController:
     """
     Coordinates execution of commands across multiple motors.
     """
 
-    def __init__(self, motor_config=None):
+    def __init__(self, motor_config: Dict[str, MotorSettings]):
         """Initializes the MotorController with motor configurations."""
-        self.motor_config = motor_config or DEFAULT_MOTOR_CONFIG.copy()
+        self.motor_config = motor_config
 
     def _run_motor(self, motor_name: str, commands: List[str]) -> bool:
         """Execute command sequence on a single motor. Returns True if successful."""
@@ -24,8 +25,8 @@ class MotorController:
             print(f"[{motor_name}] ERROR: Motor not configured")
             return False
         
-        ip = config["ip"]
-        port = config.get("port", 7776)
+        ip = config.ip
+        port = config.port
         
         try:
             with Motor(name=motor_name, ip=ip, port=port) as motor:
@@ -102,39 +103,41 @@ class MotorController:
 
     def check_connections(self) -> Dict[str, str]:
         """
-        Checks connection status of all configured motors.
+        Checks connection status of all configured motors in parallel.
         Returns a dict mapping motor name to 'connected' or 'disconnected'.
         """
-        results = {}
-        from .commands import SCLCommands  # Import internally to avoid circular dep if any
-
-        # Use threads for faster checking
         threads = []
-        lock = threading.Lock()
+        results = {}
         
-        def check_single(name, conf):
+        def check_single_status(name, conf):
             status = "disconnected"
             try:
-                ip = conf["ip"]
-                port = conf.get("port", 7776)
-                # Just try to connect and send a status request
+                ip = conf.ip
+                port = conf.port
                 with Motor(name=name, ip=ip, port=port, timeout=2.0) as motor:
-                    # Try sending RS (Request Status)
-                    if motor.send_command(SCLCommands.REQUEST_STATUS):
+                    cmd = CommandSequence.get_status()
+                    if motor.send_command(cmd):
                         status = "connected"
             except Exception:
                 pass
             
-            with lock:
-                results[name] = status
+            results[name] = status
+
+        print(f"\n[MotorController] Checking connections for {len(self.motor_config)} motor(s)...")
 
         for motor_name, config in self.motor_config.items():
-            t = threading.Thread(target=check_single, args=(motor_name, config))
-            threads.append(t)
-            t.start()
+            thread = threading.Thread(
+                target=check_single_status,
+                args=(motor_name, config),
+                daemon=False
+            )
+            threads.append(thread)
+            thread.start()
         
-        for t in threads:
-            t.join()
+        for thread in threads:
+            thread.join()
+            
+        print(f"[MotorController] Connection check completed: {results}\n")
             
         return results
     

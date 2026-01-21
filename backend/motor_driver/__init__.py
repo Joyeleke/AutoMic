@@ -1,13 +1,11 @@
 from .motor_controller import MotorController
-from .commands import CommandSequence, SCLCommands
+from .commands import CommandSequence
 from .motor import Motor
-from .config import DEFAULT_MOTOR_CONFIG, MOTION_PARAMETERS
+from .config import config
 
 __all__ = [
     "MotorController",
     "CommandSequence",
-    "SCLCommands",
     "Motor",
-    "DEFAULT_MOTOR_CONFIG",
-    "MOTION_PARAMETERS",
+    "config",
 ]

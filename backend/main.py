@@ -7,8 +7,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from motor_driver import MotorController, DEFAULT_MOTOR_CONFIG
-from motor_driver.commands import SCLCommands
+from motor_driver import MotorController, config
+from motor_driver.commands import CommandSequence
 from kinematic import MockKinematicsSolver
 
 class MoveRequest(BaseModel):
@@ -31,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-controller = MotorController(motor_config=DEFAULT_MOTOR_CONFIG)
+controller = MotorController(motor_config=config.motors)
 kinematics_solver = MockKinematicsSolver()
 
 @app.post("/move")
@@ -54,8 +54,7 @@ def move(request: MoveRequest):
 def emergency_stop():
     """Immediately halt all motors."""
     try:
-        # Send STOP command ("ST") to all motors
-        stop_command = {"motor1": [SCLCommands.STOP], "motor2": [SCLCommands.STOP], "motor3": [SCLCommands.STOP], "motor4": [SCLCommands.STOP]}
+        stop_command = {"motor1": [CommandSequence.stop()], "motor2": [CommandSequence.stop()], "motor3": [CommandSequence.stop()], "motor4": [CommandSequence.stop()]}
         controller.execute_motors(stop_command, parallel=True)
         return {"status": "stopped"}
     except Exception as e:

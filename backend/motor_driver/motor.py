@@ -4,7 +4,7 @@ SCL Motor communication module.
 
 import socket
 from typing import Optional
-from .config import PROTOCOL_CONFIG, MOTION_PARAMETERS
+from .config import config
 
 class Motor:
     """
@@ -12,10 +12,10 @@ class Motor:
     This class handles only the low-level communication with a single motor.
     """
 
-    def __init__(self, name, ip, port=7776, timeout=5.0):
+    def __init__(self, name, ip, port=7776, timeout=None):
         self.name = name
         self.drive_address = (ip, port)
-        self.timeout = timeout or MOTION_PARAMETERS["socket_timeout"]
+        self.timeout = timeout or config.motion.socket_timeout
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def __enter__(self):
@@ -30,9 +30,9 @@ class Motor:
 
     def _build_packet(self, command: str) -> bytes:
         """Builds a complete SCL packet with protocol headers and terminator."""
-        header = PROTOCOL_CONFIG["header_bytes"]
-        terminator = PROTOCOL_CONFIG["terminator_byte"]
-        encoding = PROTOCOL_CONFIG["encoding"]
+        header = config.protocol.header_bytes
+        terminator = config.protocol.terminator_byte
+        encoding = config.protocol.encoding
         packet = command.encode(encoding)
         return header + packet + terminator
 
@@ -41,9 +41,9 @@ class Motor:
         if not data:
             return None
 
-        header = PROTOCOL_CONFIG["header_bytes"]
-        terminator = PROTOCOL_CONFIG["terminator_byte"]
-        encoding = PROTOCOL_CONFIG["encoding"]
+        header = config.protocol.header_bytes
+        terminator = config.protocol.terminator_byte
+        encoding = config.protocol.encoding
         payload = data[len(header):-len(terminator)]
         return payload.decode(encoding).strip()
 
@@ -69,7 +69,7 @@ class Motor:
             full_packet = self._build_packet(command)
             self.socket.sendall(full_packet)
         
-            data = self.socket.recv(MOTION_PARAMETERS["recv_buffer_size"])
+            data = self.socket.recv(config.motion.recv_buffer_size)
             response = self._parse_response(data)
         
             if response is None:
