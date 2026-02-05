@@ -50,5 +50,6 @@ class MotorConfig(BaseSettings):
 
     class Config:
         env_file = ".env"
+        env_nested_delimiter = "__"
 
 config = MotorConfig()
