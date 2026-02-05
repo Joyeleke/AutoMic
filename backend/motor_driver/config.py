@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
-from typing import Dict
+from typing import Dict, List
 
 class MotorSettings(BaseModel):
     ip: str
@@ -15,6 +15,15 @@ class MotionSettings(BaseModel):
     socket_timeout: float = 5.0
     recv_buffer_size: int = 1024
 
+class GeometrySettings(BaseModel):
+    m1: List[float] = [6.5, 13.0, 0.0]
+    m2: List[float] = [1.0, 3.0, 0.0]
+    m3: List[float] = [12.0, 3.0, 0.0]
+    m4: List[float] = [6.5, 6.5, 13.0]
+
+class KinematicSettings(BaseModel):
+    step_size: float = 0.000005  
+
 class MotorConfig(BaseSettings):
     motor1_ip: str = "192.168.1.10"
     motor2_ip: str = "192.168.1.20"
@@ -27,6 +36,8 @@ class MotorConfig(BaseSettings):
 
     protocol: ProtocolSettings = ProtocolSettings()
     motion: MotionSettings = MotionSettings()
+    geometry: GeometrySettings = GeometrySettings()
+    kinematics: KinematicSettings = KinematicSettings()
     
     @property
     def motors(self) -> Dict[str, MotorSettings]:

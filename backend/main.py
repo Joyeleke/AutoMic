@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from motor_driver import MotorController, config
 from motor_driver.commands import CommandSequence
-from kinematic import MockKinematicsSolver
+from kinematic import KinematicsSolver
 
 class MoveRequest(BaseModel):
     """Request to move microphone to XYZ position."""
@@ -32,7 +32,16 @@ app.add_middleware(
 )
 
 controller = MotorController(motor_config=config.motors)
-kinematics_solver = MockKinematicsSolver()
+kinematics_solver = KinematicsSolver()
+
+@app.post("/calibrate")
+def calibrate(request: MoveRequest):
+    """Endpoint to calibrate the current position of the microphone."""
+    try:
+        kinematics_solver.calibrate_position(request.x, request.y, request.z)
+        return {"status": "calibrated", "position": request.dict()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/move")
 def move(request: MoveRequest):
@@ -42,7 +51,7 @@ def move(request: MoveRequest):
         controller.execute_motors(command_map, parallel=True)
         return {
             "status": "success",
-            "position": {"x": request.x, "y": request.y, "z": request.z}
+            "position": request.dict()
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
