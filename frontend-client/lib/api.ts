@@ -28,6 +28,26 @@ export async function moveToPosition(
   return response.json();
 }
 
+export async function calibratePosition(
+  x: number,
+  y: number,
+  z: number
+): Promise<{ status: string; position: { x: number; y: number; z: number } }> {
+  const response = await fetch(`${API_BASE_URL}/calibrate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ x, y, z }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to calibrate: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export async function checkHealth(): Promise<HealthResponse> {
   const response = await fetch(`${API_BASE_URL}/health`);
 

@@ -71,6 +71,10 @@ export default function Home() {
               isConnected={isConnected}
               isMoving={isMoving}
               onConnectToggle={handleConnectToggle}
+              onCalibrate={(pos) => {
+                setPosition(pos);
+                addLog(`System calibrated to X:${pos.x} Y:${pos.y} Z:${pos.z}`);
+              }}
             />
             <PresetList
               onLoadPreset={(preset) => {
