@@ -16,10 +16,10 @@ class MotionSettings(BaseModel):
     recv_buffer_size: int = 1024
 
 class GeometrySettings(BaseModel):
-    m1: List[float] = [6.5, 13.0, 0.0]
-    m2: List[float] = [1.0, 3.0, 0.0]
-    m3: List[float] = [12.0, 3.0, 0.0]
-    m4: List[float] = [6.5, 6.5, 13.0]
+    m1: List[float] = [0.0, 0.0, 8.0]
+    m2: List[float] = [13.0, 0.0, 8.0]
+    m3: List[float] = [13.0, 13.0, 8.0]
+    m4: List[float] = [0.0, 13.0, 8.0]
 
 class KinematicSettings(BaseModel):
     step_size: float = 0.000005  

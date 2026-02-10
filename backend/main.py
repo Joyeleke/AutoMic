@@ -48,7 +48,7 @@ def move(request: MoveRequest):
     """Endpoint to move microphone to specified XYZ position."""
     try:
         command_map = kinematics_solver.solve(request.x, request.y, request.z)
-        controller.execute_motors(command_map, parallel=True)
+        controller.execute_motors(command_map, parallel=False)
         return {
             "status": "success",
             "position": request.dict()
