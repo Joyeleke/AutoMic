@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AutoMic Kinematics Engine</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            color: #ddd;
+            font-family: 'Segoe UI', monospace;
+        }
+
+        /* Control Panel */
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            border: 1px solid #444;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            justify-content: space-between;
+        }
+
+        label {
+            width: 30px;
+            font-weight: bold;
+            color: #0f0;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            background: #222;
+            border: 1px solid #555;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            margin: 0 10px;
+            accent-color: #0f0;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #006600;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #008800;
+        }
+
+        /* Data Panel (The Calculations) */
+        #data-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.9em;
+        }
+
+        th {
+            text-align: left;
+            border-bottom: 1px solid #555;
+            padding: 5px;
+            color: #888;
+        }
+
+        td {
+            padding: 8px 5px;
+            border-bottom: 1px solid #333;
+            font-family: monospace;
+        }
+
+        .highlight {
+            color: #0f0;
+            font-weight: bold;
+        }
+
+        .neg {
+            color: #ff4444;
+        }
+
+        .meta {
+            font-size: 0.8em;
+            color: #666;
+            width: 200px;
+            padding-top: 10px;
+            line-height: 1.5em;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+    <!-- CONTROLS -->
+    <div id="controls">
+        <h3 style="margin-top:0; border-bottom:1px solid #444; padding-bottom:10px;">Target Coordinates</h3>
+
+        <div class="input-row">
+            <label>X</label>
+            <input type="range" id="sliderX" step="0.01">
+            <input type="number" id="numX" step="0.01">
+        </div>
+
+        <div class="input-row">
+            <label>Y</label>
+            <input type="range" id="sliderY" step="0.01">
+            <input type="number" id="numY" step="0.01">
+        </div>
+
+        <div class="input-row">
+            <label>Z</label>
+            <input type="range" id="sliderZ" step="0.01">
+            <input type="number" id="numZ" step="0.01">
+        </div>
+
+        <button onclick="commitMove()">EXECUTE MOVE</button>
+    </div>
+
+    <!-- CALCULATION TABLE -->
+    <div id="data-panel">
+        <div style="flex-grow: 1;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Motor</th>
+                        <th>Target Length</th>
+                        <th>Δ Length (in)</th>
+                        <th>Δ Steps (Raw)</th>
+                        <th>Δ Rotations</th>
+                    </tr>
+                </thead>
+                <tbody id="calcBody">
+                    <!-- JS fills this -->
+                </tbody>
+            </table>
+        </div>
+        <div class="meta">
+            <strong>MATH CONSTANTS</strong><br>
+            Drum Dia: 104mm<br>
+            Circumference: 12.863"<br>
+            Steps/Rev: 20,000<br>
+            <strong>Step Size: 0.00064316"</strong>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SYSTEM CONSTANTS ---
+        const STEP_SIZE = 0.00064316; // Calculated in Step 3.1
+        const STEPS_PER_REV = 20000;
+
+        // Motor Coordinates (Fixed)
+        const MOTORS = {
+            M1: { pos: [6.43, 6.79, 7.93], label: "M1 (Back-L)" },
+            M2: { pos: [12.25, 12.17, 4.25], label: "M2 (Back-R)" },
+            M3: { pos: [0.75, 12.17, 4.25], label: "M3 (Front-R)" },
+            M4: { pos: [6.43, 0.0, 4.25], label: "M4 (Front-L)" }
+        };
+
+        // State
+        let currentPos = { x: 0, y: 0, z: 0 }; // Will act as "Last Known Position"
+        let targetPos = { x: 0, y: 0, z: 0 };  // "Phantom" Position
+
+        // --- 2. THREE.JS SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111111);
+
+        // Dynamic Camera Centering
+        let minX = 100, maxX = -100, minY = 100, maxY = -100, maxZ = -100;
+        Object.values(MOTORS).forEach(m => {
+            if (m.pos[0] < minX) minX = m.pos[0];
+            if (m.pos[0] > maxX) maxX = m.pos[0];
+            if (m.pos[1] < minY) minY = m.pos[1];
+            if (m.pos[1] > maxY) maxY = m.pos[1];
+            if (m.pos[2] > maxZ) maxZ = m.pos[2];
+        });
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const centerZ = maxZ / 2;
+
+        // Initialize Positions
+        currentPos = { x: centerX, y: centerY, z: centerZ };
+        targetPos = { ...currentPos };
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(centerX + 12, centerZ + 8, centerY + 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(centerX, centerZ, centerY);
+        controls.update();
+
+        // --- 3. SCENE OBJECTS ---
+
+        // Frame
+        const boxGeo = new THREE.BoxGeometry(maxX - minX, maxZ, maxY - minY);
+        const edges = new THREE.EdgesGeometry(boxGeo);
+        const frame = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x333333 }));
+        // Logic Y -> Three Z, Logic Z -> Three Y
+        frame.position.set((minX + maxX) / 2, maxZ / 2, (minY + maxY) / 2);
+        scene.add(frame);
+
+        // Motors
+        const motorMeshes = {};
+        Object.entries(MOTORS).forEach(([key, data]) => {
+            const m = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+            m.position.set(data.pos[0], data.pos[2], data.pos[1]);
+            scene.add(m);
+            motorMeshes[key] = m;
+        });
+
+        // Current Mic (Ghost)
+        const currentMic = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), new THREE.MeshBasicMaterial({ color: 0x004400, transparent: true, opacity: 0.5 }));
+        currentMic.position.set(currentPos.x, currentPos.z, currentPos.y);
+        scene.add(currentMic);
+
+        // Target Mic (Solid)
+        const targetMic = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00 }));
+        targetMic.position.set(targetPos.x, targetPos.z, targetPos.y);
+        scene.add(targetMic);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const dl = new THREE.DirectionalLight(0xffffff, 0.8);
+        dl.position.set(10, 20, 10);
+        scene.add(dl);
+
+        // Cables (Target only for visual clarity)
+        const cables = {};
+        Object.keys(MOTORS).forEach(k => {
+            const line = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffff00 }));
+            scene.add(line);
+            cables[k] = line;
+        });
+
+        // --- 4. LOGIC & CALCULATION ---
+
+        function getDist(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1[0], 2) + Math.pow(p2.y - p1[1], 2) + Math.pow(p2.z - p1[2], 2));
+        }
+
+        function updateSimulation() {
+            // Update Visuals
+            targetMic.position.set(targetPos.x, targetPos.z, targetPos.y);
+
+            // Draw Cables to Target
+            Object.entries(MOTORS).forEach(([key, m]) => {
+                const points = [
+                    new THREE.Vector3(m.pos[0], m.pos[2], m.pos[1]),
+                    new THREE.Vector3(targetPos.x, targetPos.z, targetPos.y)
+                ];
+                cables[key].geometry.setFromPoints(points);
+            });
+
+            updateTable();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('calcBody');
+            tbody.innerHTML = '';
+
+            Object.entries(MOTORS).forEach(([key, m]) => {
+                // 1. Calculate Lengths
+                const lenCurrent = getDist(m.pos, currentPos); // From "Ghost"
+                const lenTarget = getDist(m.pos, targetPos);   // To "Target"
+
+                // 2. Calculate Deltas
+                const deltaInches = lenTarget - lenCurrent; // Positive = Extend, Negative = Retract
+
+                // 3. Calculate Steps (The Logic Check)
+                // Formula: Delta / Step_Size
+                const deltaSteps = Math.round(deltaInches / STEP_SIZE);
+
+                // 4. Calculate Revs
+                const deltaRevs = (deltaSteps / STEPS_PER_REV).toFixed(2);
+
+                // Render Row
+                const tr = document.createElement('tr');
+                const signClass = deltaInches >= 0 ? 'highlight' : 'neg';
+                const signSym = deltaInches >= 0 ? '+' : '';
+
+                tr.innerHTML = `
+                    <td>${key}</td>
+                    <td style="color:#aaa">${lenTarget.toFixed(3)}"</td>
+                    <td class="${signClass}">${signSym}${deltaInches.toFixed(3)}"</td>
+                    <td class="${signClass}">${signSym}${deltaSteps}</td>
+                    <td>${signSym}${deltaRevs}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 5. UI BINDING ---
+        const inputs = {
+            x: { slider: document.getElementById('sliderX'), num: document.getElementById('numX') },
+            y: { slider: document.getElementById('sliderY'), num: document.getElementById('numY') },
+            z: { slider: document.getElementById('sliderZ'), num: document.getElementById('numZ') }
+        };
+
+        // Init ranges based on bounds
+        inputs.x.slider.min = minX; inputs.x.slider.max = maxX;
+        inputs.y.slider.min = minY; inputs.y.slider.max = maxY;
+        inputs.z.slider.min = 0; inputs.z.slider.max = maxZ;
+
+        // Helper to sync
+        function syncUI(axis, val) {
+            inputs[axis].slider.value = val;
+            inputs[axis].num.value = val;
+            targetPos[axis] = parseFloat(val);
+            updateSimulation();
+        }
+
+        // Listeners
+        ['x', 'y', 'z'].forEach(axis => {
+            // Slider -> Num
+            inputs[axis].slider.addEventListener('input', (e) => syncUI(axis, e.target.value));
+            // Num -> Slider
+            inputs[axis].num.addEventListener('input', (e) => syncUI(axis, e.target.value));
+        });
+
+        // Initialize UI
+        syncUI('x', currentPos.x);
+        syncUI('y', currentPos.y);
+        syncUI('z', currentPos.z);
+
+        // "EXECUTE MOVE" Logic
+        window.commitMove = function () {
+            // Update "Current" to match "Target"
+            currentPos = { ...targetPos };
+            currentMic.position.set(currentPos.x, currentPos.z, currentPos.y);
+            // Refresh table (Deltas should become 0)
+            updateTable();
+        };
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>
