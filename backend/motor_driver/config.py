@@ -22,7 +22,7 @@ class GeometrySettings(BaseModel):
     m4: List[float] = [6.43, 0.00, 4.25]   
 
 class KinematicSettings(BaseModel):
-    step_size: float = 0.00064316 
+    kinematic_step_size: float = 0.00064316 
 
 class MotorConfig(BaseSettings):
     motor1_ip: str = "192.168.1.10"

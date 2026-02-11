@@ -32,6 +32,10 @@ export default function CalibrationModal({
     const [error, setError] = useState<string | null>(null);
 
     const handleInputChange = (key: keyof Position, value: string) => {
+        if (value === "") {
+            setPos((prev) => ({ ...prev, [key]: NaN }));
+            return;
+        }
         const num = parseFloat(value);
         if (!isNaN(num)) {
             setPos((prev) => ({ ...prev, [key]: num }));
@@ -41,9 +45,16 @@ export default function CalibrationModal({
     const handleCalibrate = async () => {
         setLoading(true);
         setError(null);
+
+        if (isNaN(pos.x) || isNaN(pos.y) || isNaN(pos.z)) {
+            setError("Please enter valid numbers for calibration.");
+            setLoading(false);
+            return;
+        }
+
         try {
-            await calibratePosition(pos.x, pos.y, pos.z);
-            onCalibrateSuccess(pos);
+            const response = await calibratePosition(pos.x, pos.y, pos.z);
+            onCalibrateSuccess(response.position);
             onClose();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Calibration failed");
@@ -80,7 +91,8 @@ export default function CalibrationModal({
                         <Input
                             id="cal-x"
                             type="number"
-                            value={pos.x}
+                            step="any"
+                            value={isNaN(pos.x) ? "" : pos.x}
                             onChange={(e) => handleInputChange("x", e.target.value)}
                             className="col-span-3"
                         />
@@ -92,7 +104,8 @@ export default function CalibrationModal({
                         <Input
                             id="cal-y"
                             type="number"
-                            value={pos.y}
+                            step="any"
+                            value={isNaN(pos.y) ? "" : pos.y}
                             onChange={(e) => handleInputChange("y", e.target.value)}
                             className="col-span-3"
                         />
@@ -104,7 +117,8 @@ export default function CalibrationModal({
                         <Input
                             id="cal-z"
                             type="number"
-                            value={pos.z}
+                            step="any"
+                            value={isNaN(pos.z) ? "" : pos.z}
                             onChange={(e) => handleInputChange("z", e.target.value)}
                             className="col-span-3"
                         />

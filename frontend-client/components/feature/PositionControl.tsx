@@ -41,11 +41,14 @@ export default function PositionControl({
   }, [position]);
 
   const handleInputChange = (key: keyof Position, value: string) => {
+    if (value === "") {
+      setPendingPosition({ ...pendingPosition, [key]: NaN });
+      return;
+    }
     const num = parseFloat(value);
     if (isNaN(num)) return;
 
-    // Enforce bounds
-    const bounds: Record<keyof Position, [number, number]> = { x: [0, 10], y: [0, 7], z: [0, 8] };
+    const bounds: Record<keyof Position, [number, number]> = { x: [0, 12.25], y: [0, 12.17], z: [0, 7.93] };
     const [min, max] = bounds[key];
     const clamped = Math.max(min, Math.min(max, num));
 
@@ -54,6 +57,10 @@ export default function PositionControl({
 
   const handleApplyPosition = async () => {
     setError(null);
+    if (isNaN(pendingPosition.x) || isNaN(pendingPosition.y) || isNaN(pendingPosition.z)) {
+      setError("Please enter valid numbers for all positions.");
+      return;
+    }
     try {
       await onMove(pendingPosition);
     } catch (err) {
@@ -127,11 +134,14 @@ export default function PositionControl({
                 <Input
                   id="x-position"
                   type="number"
-                  value={pendingPosition.x}
+                  step="any"
+                  min="0"
+                  max="12.25"
+                  value={isNaN(pendingPosition.x) ? "" : pendingPosition.x}
                   onChange={(e) => handleInputChange("x", e.target.value)}
                   className="w-full"
                 />
-                <p className="text-xs text-gray-500">Range: 0-10&#39;</p>
+                <p className="text-xs text-gray-500">Range: 0-12.25&#39;</p>
               </div>
               <div className="flex flex-col gap-2 w-1/4">
                 <Label htmlFor="y-position" className="text-sm font-medium">
@@ -140,11 +150,14 @@ export default function PositionControl({
                 <Input
                   id="y-position"
                   type="number"
-                  value={pendingPosition.y}
+                  step="any"
+                  min="0"
+                  max="12.17"
+                  value={isNaN(pendingPosition.y) ? "" : pendingPosition.y}
                   onChange={(e) => handleInputChange("y", e.target.value)}
                   className="w-full"
                 />
-                <p className="text-xs text-gray-500">Range: 0-7&#39;</p>
+                <p className="text-xs text-gray-500">Range: 0-12.17&#39;</p>
               </div>
               <div className="flex flex-col gap-2 w-1/3">
                 <Label htmlFor="z-position" className="text-sm font-medium">
@@ -153,11 +166,14 @@ export default function PositionControl({
                 <Input
                   id="z-position"
                   type="number"
-                  value={pendingPosition.z}
+                  step="any"
+                  min="0"
+                  max="7.93"
+                  value={isNaN(pendingPosition.z) ? "" : pendingPosition.z}
                   onChange={(e) => handleInputChange("z", e.target.value)}
                   className="w-full"
                 />
-                <p className="text-xs text-gray-500">Range: 0-8&#39;</p>
+                <p className="text-xs text-gray-500">Range: 0-7.93&#39;</p>
               </div>
             </div>
           </fieldset>

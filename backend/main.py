@@ -30,7 +30,7 @@ async def startup_event():
     print("="*50)
     print(f"Configuration Loaded:")
     print(f"  Motor IPs: {config.motor1_ip}, {config.motor2_ip}, {config.motor3_ip}, {config.motor4_ip}")
-    print(f"  Step Size: {config.kinematics.step_size}")
+    print(f"  Step Size: {config.kinematics.kinematic_step_size}")
     print(f"  Geometry M1: {config.geometry.m1}")
     print(f"  Geometry M2: {config.geometry.m2}")
     print(f"  Geometry M3: {config.geometry.m3}")
@@ -53,7 +53,7 @@ def calibrate(request: MoveRequest):
     """Endpoint to calibrate the current position of the microphone."""
     try:
         kinematics_solver.calibrate_position(request.x, request.y, request.z)
-        return {"status": "calibrated", "position": request.dict()}
+        return {"status": "calibrated", "position": request.model_dump()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -62,10 +62,10 @@ def move(request: MoveRequest):
     """Endpoint to move microphone to specified XYZ position."""
     try:
         command_map = kinematics_solver.solve(request.x, request.y, request.z)
-        controller.execute_motors(command_map, parallel=False)
+        controller.execute_motors(command_map, parallel=True)
         return {
             "status": "success",
-            "position": request.dict()
+            "position": request.model_dump()
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

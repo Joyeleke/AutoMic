@@ -66,3 +66,13 @@ export async function testConnection(): Promise<boolean> {
     return false;
   }
 }
+
+export async function emergencyStop(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/emergency-stop`, {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to trigger emergency stop: ${response.statusText}`);
+  }
+}

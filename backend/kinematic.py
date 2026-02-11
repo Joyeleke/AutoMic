@@ -59,7 +59,7 @@ class KinematicsSolver:
         
         print(f"KINEMATICS: Calculated Lengths: {new_lengths}")
 
-        step_val = self.config.kinematics.step_size
+        step_val = self.config.kinematics.kinematic_step_size
         command_map = {}
         motor_names = ["motor1", "motor2", "motor3", "motor4"]
         
