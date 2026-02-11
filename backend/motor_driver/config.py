@@ -16,13 +16,13 @@ class MotionSettings(BaseModel):
     recv_buffer_size: int = 1024
 
 class GeometrySettings(BaseModel):
-    m1: List[float] = [0.0, 0.0, 8.0]
-    m2: List[float] = [13.0, 0.0, 8.0]
-    m3: List[float] = [13.0, 13.0, 8.0]
-    m4: List[float] = [0.0, 13.0, 8.0]
+    m1: List[float] = [6.43, 6.79, 7.93]   
+    m2: List[float] = [12.25, 12.17, 4.25] 
+    m3: List[float] = [0.75, 12.17, 4.25]  
+    m4: List[float] = [6.43, 0.00, 4.25]   
 
 class KinematicSettings(BaseModel):
-    step_size: float = 0.000005  
+    step_size: float = 0.00064316 
 
 class MotorConfig(BaseSettings):
     motor1_ip: str = "192.168.1.10"

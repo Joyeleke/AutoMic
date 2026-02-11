@@ -23,6 +23,20 @@ app = FastAPI(
     version="1.0.0",
 )
 
+@app.on_event("startup")
+async def startup_event():
+    print("="*50)
+    print("AUTOMIC BACKEND STARTED")
+    print("="*50)
+    print(f"Configuration Loaded:")
+    print(f"  Motor IPs: {config.motor1_ip}, {config.motor2_ip}, {config.motor3_ip}, {config.motor4_ip}")
+    print(f"  Step Size: {config.kinematics.step_size}")
+    print(f"  Geometry M1: {config.geometry.m1}")
+    print(f"  Geometry M2: {config.geometry.m2}")
+    print(f"  Geometry M3: {config.geometry.m3}")
+    print(f"  Geometry M4: {config.geometry.m4}")
+    print("="*50)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
