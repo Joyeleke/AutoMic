@@ -11,6 +11,10 @@ class KinematicsSolver:
     def __init__(self):
         self.config = motor_config
         self.last_lengths: Optional[List[float]] = None
+        geo = self.config.geometry
+        self.max_x = max(geo.m1[0], geo.m2[0], geo.m3[0], geo.m4[0])
+        self.max_y = max(geo.m1[1], geo.m2[1], geo.m3[1], geo.m4[1])
+        self.max_z = max(geo.m1[2], geo.m2[2], geo.m3[2], geo.m4[2])
 
     def _get_distance(self, p1: List[float], p2: List[float]) -> float:
         """Calculates 3D Euclidean distance between two points."""
@@ -38,6 +42,9 @@ class KinematicsSolver:
         if self.last_lengths is None:
             raise RuntimeError("System not calibrated! Call calibrate_position() first.")
 
+        if not (0 <= x <= self.max_x and 0 <= y <= self.max_y and 0 <= z <= self.max_z):
+             raise ValueError(f"Target ({x}, {y}, {z}) is out of bounds [0-{self.max_x}, 0-{self.max_y}, 0-{self.max_z}]")
+
         target_pos = [x, y, z]
         geo = self.config.geometry
         
@@ -59,11 +66,16 @@ class KinematicsSolver:
         motor_steps = []
         for i in range(4):
             diff = self.last_lengths[i] - new_lengths[i]
-            steps = int(diff / step_val)
+            diff_inches = diff * 12.0
+            steps = int(diff_inches / step_val)
             motor_steps.append(steps)
             
         abs_steps = [abs(s) for s in motor_steps]
         max_steps = max(abs_steps)
+        
+        if max_steps == 0:
+            print("KINEMATICS: No movement required.")
+            return {}
         
         print(f"KINEMATICS: Steps: {motor_steps}")
         print(f"KINEMATICS: Pacer Max Steps: {max_steps}")
@@ -73,10 +85,7 @@ class KinematicsSolver:
         for i, name in enumerate(motor_names):
             steps = motor_steps[i]
             
-            if max_steps < 10: 
-                speed = target_speed 
-            else:
-                speed = (abs(steps) / max_steps) * target_speed
+            speed = (abs(steps) / max_steps) * target_speed
                 
             if speed < 0.1: speed = 0.1 
             

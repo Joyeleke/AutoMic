@@ -1,122 +1,111 @@
-AutoMic Kinematics & System Design
+# AutoMic Kinematics & System Design
 
-1. System Overview
 
-The AutoMic is a Cable-Driven Parallel Robot (CDPR) designed to position a microphone within a 3D space using four coordinated winches. The system uses an Inverse Kinematics model based on 3D Euclidean geometry to translate target spatial coordinates $(x, y, z)$ into specific motor step commands.
 
-2. Physical Geometry (The Frame)
+## 1. System Overview
 
-The motor anchor points are defined in an Imperial (Feet) coordinate system.
+The **AutoMic** is a specialized robotic system designed to position a microphone in 3D space using four coordinated winches. It employs a **Cable-Driven Parallel Robot (CDPR)** architecture, where the end-effector (microphone) is suspended by cables tensioned by stepper motors.
 
-Origin $(0,0,0)$: Front-Left floor corner.
+The core "Kinematics Engine" translates a desired 3D spatial coordinate $(x, y, z)$ into precise digital step commands for each of the four motors.
 
-X-Axis: Width (Left $\to$ Right).
+---
 
-Y-Axis: Depth (Front $\to$ Back).
+## 2. Physical Geometry (The Frame)
 
-Motor Coordinates $(x, y, z)$:
+The system operates within a defined 3D coordinate space. The geometry is **asymmetric** to accommodate the physical room constraints.
 
-Motor 1 (Center High): [6.43, 6.79, 7.93]
+**Coordinate System:**
+*   **Units:** Feet (Imperial)
+*   **Origin $(0,0,0)$:** Front-Left corner of the floor.
+*   **X-Axis:** Room Width (Left $\to$ Right)
+*   **Y-Axis:** Room Depth (Front $\to$ Back)
+*   **Z-Axis:** Height (Floor $\to$ Ceiling)
 
-Located at the geometric center of the frame.
+### Motor Coordinates
 
-Motor 2 (Back Right): [12.25, 12.17, 4.25]
+| Motor ID | Position | Coordinates $(x, y, z)$ | Description |
+| :--- | :--- | :--- | :--- |
+| **Motor 1** | Center High | `[6.43, 6.79, 7.93]` | Primary lift point, near the ceiling center. |
+| **Motor 2** | Back Right | `[12.25, 12.17, 4.25]` | Mid-height anchor in the back corner. |
+| **Motor 3** | Back Left | `[0.75, 12.17, 4.25]` | Mid-height anchor in the back corner. |
+| **Motor 4** | Front Center | `[6.43, 0.00, 4.25]` | Mid-height anchor on the opposite wall. |
 
-Motor 3 (Back Left): [0.75, 12.17, 4.25]
+---
 
-Motor 4 (Front Center): [6.43, 0.00, 4.25]
+## 3. Drive Train Physics
 
-3. Drive Train Physics
+To convert "Feet of Travel" into "Motor Steps," we derive the system's **Atomic Unit** based on the hardware specifications.
 
-We derived the system's "Atomic Unit" (Inches per Microstep) from the physical hardware specifications.
+### Hardware Specifications
+*   **Drum Diameter ($D$):** $104 \text{ mm}$ (Inner spool diameter)
+*   **Motor Resolution ($R$):** $20,000$ steps/revolution (Microstepping enabled)
 
-A. Hardware Specs
+### The Derivation
 
-Drum Diameter: $104 \text{ mm}$ (Inner spool diameter)
+1.  **Metric Circumference ($C_{mm}$):**
+    $$C_{mm} = \pi \times D = \pi \times 104 \approx 326.726 \text{ mm}$$
 
-Motor Resolution: $20,000 \text{ steps/revolution}$
+2.  **Imperial Circumference ($C_{in}$):**
+    $$C_{in} = \frac{C_{mm}}{25.4} \approx 12.8632 \text{ inches}$$
 
-Cable Thickness: Neglected for initial model.
+3.  **Step Constant ($\lambda$):**
+    This constant represents the linear travel per single motor step.
+    $$\lambda = \frac{C_{in}}{R} = \frac{12.8632}{20,000} \approx \mathbf{0.00064316} \text{ in/step}$$
 
-B. The Calculation
+---
 
-Metric Circumference:
+## 4. Inverse Kinematics (The Algorithm)
 
-$$C_{mm} = \pi \times 104 \text{ mm} \approx 326.726 \text{ mm}$$
+The software does not track absolute cable spooling. Instead, it calculates the **Delta** ($\Delta$) required to transition from the `Current` position to the `Target` position.
 
-Imperial Conversion:
+### Step 1: 3D Euclidean Distance
+For each motor $i$ located at $(M_x, M_y, M_z)$ and the target at $(T_x, T_y, T_z)$, we calculate the straight-line cable length required:
 
-$$C_{in} = \frac{326.726}{25.4} \approx 12.8632 \text{ inches}$$
+$$L_{new} = \sqrt{(T_x - M_x)^2 + (T_y - M_y)^2 + (T_z - M_z)^2}$$
 
-Step Constant Derivation:
-This constant defines linear cable travel per single motor step.
+### Step 2: Calculate Delta
+We compare the **Current Cable Length** (tracked in software) against the **New Required Length**.
 
-$$Step\_Size = \frac{12.8632 \text{ inches}}{20,000 \text{ steps}} \approx 0.00064316 \text{ in/step}$$
+$$\Delta L = L_{current} - L_{new}$$
 
-4. Kinematic Logic (The Algorithm)
+*   **Positive (+) $\Delta$:** $L_{current} > L_{new}$. The cable needs to get shorter. **Action: REEL IN.**
+*   **Negative (-) $\Delta$:** $L_{current} < L_{new}$. The cable needs to get longer. **Action: RELEASE.**
 
-The software does not store absolute cable lengths. Instead, it calculates the Delta (change in length) needed to move from Position A to Position B.
+### Step 3: Step Conversion
+Convert the physical measurement (feet $\to$ inches) and then to steps:
 
-Step 1: 3D Euclidean Distance
+$$Steps = \frac{\Delta L_{ft} \times 12}{\lambda} = \frac{\Delta L_{in}}{0.00064316}$$
 
-For each motor $i$ at position $(Mx, My, Mz)$ and a Target at $(Tx, Ty, Tz)$, we calculate the total straight-line cable length required:
+---
 
-$$L_i = \sqrt{(Tx - Mx)^2 + (Ty - My)^2 + (Tz - Mz)^2}$$
+## 5. The "Pacer" Algorithm (Speed Scaling)
 
-Step 2: Calculate Delta
+To prevent the microphone from swinging or cables going slack, all motors must **start** and **finish** their movements at the exact same moment.
 
-We compare the New Target Length against the Current calibrated Length.
+Since each motor travels a different distance, they cannot simply run at the same speed. We use a **Speed Scaling** algorithm.
 
-$$\Delta L = L_{new} - L_{current}$$
-
-Positive $\Delta$: The target is further away. Motor must unspool (Steps > 0).
-
-Negative $\Delta$: The target is closer. Motor must spool in (Steps < 0).
-
-Step 3: Step Conversion
-
-We convert the physical delta into a digital command using the constant derived in Section 3.
-
-$$Command_{steps} = \frac{\Delta L}{0.00064316}$$
-
-5. Coordinated Motion (Speed Integration)
-
-To ensure safely coordinated movement, the system uses a Speed Scaling algorithm. This ensures all motors start and stop simultaneously, maintaining tension and geometry.
-
-The Algorithm:
-
-Calculate All Deltas:
-Determine the absolute steps needed for all 4 motors: $|S_1|, |S_2|, |S_3|, |S_4|$.
-
-Find the "Pacer":
-Identify the maximum number of steps any single motor has to move.
-
-$$S_{max} = \max(|S_1|, |S_2|, |S_3|, |S_4|)$$
-
-Set Pacer Speed:
-Assign the user's requested speed ($V_{target}$) to the motor moving the furthest.
-
-Scale Other Speeds:
-Calculate the speed for every other motor $i$ proportionally:
+### Logic
+1.  **Calculate All Steps:** Determine absolute required steps for all 4 motors: $|S_1|, |S_2|, |S_3|, |S_4|$.
+2.  **Make the Pacer:** Identify the motor moving the furthest distance.
+    $$S_{max} = \max(|S_1|, |S_2|, |S_3|, |S_4|)$$
+3.  **Set Pacer Speed:** The "Pacer" motor runs at the User's Target Speed ($V_{target}$).
+4.  **Scale Others:** All other motors run at a fraction of that speed, proportional to their distance relative to the Pacer.
 
 $$V_i = V_{target} \times \frac{|S_i|}{S_{max}}$$
 
-Example:
+### Example
+*   **Target Speed:** 5.0 rps
+*   **Motor 1 (Pacer):** Moves 10,000 steps. $\to$ Speed = **5.0 rps**
+*   **Motor 2:** Moves 5,000 steps (50% of max). $\to$ Speed = **2.5 rps**
 
-Motor 1 moves 10,000 steps (Pacer).
+**Result:** Both motors finish their move in exactly 2,000 time units. The system moves in a straight 3D vector.
 
-Motor 2 moves 5,000 steps.
+---
 
-Target Speed is 2,000 steps/sec.
-
-Result: Motor 1 runs at 2,000 steps/sec. Motor 2 runs at 1,000 steps/sec. Both finish in exactly 5 seconds.
-
-6. Simulation Tool
+## 6. Simulation Tool
 
 An HTML visualization tool ([kinematic.html](kinematic.html)) is provided to verify this math in real-time.
 
-Features: Live 3D rendering of the asymmetric frame.
-
-Verification: Displays real-time calculations for Target Length, Delta Inches, and Step Counts.
-
-Usage: Enter $(x,y,z)$ coordinates to see the exact resulting motor commands before running hardware.
+*   **Features:** Live 3D rendering of the asymmetric frame.
+*   **Verification:** Displays real-time calculations for Target Length, Delta Inches, and Step Counts.
+*   **Usage:** Enter $(x, y, z)$ coordinates to see the exact resulting motor commands before running hardware.
