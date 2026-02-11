@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import PositionControl from "@/components/feature/PositionControl";
 import PresetList from "@/components/feature/PresetList";
 import StageView from "@/components/feature/StageView";
 import SystemLog from "@/components/feature/SystemLog";
-import { Position, LogEntry } from "@/types/motor";
-import { testConnection, moveToPosition } from "@/lib/api";
+import { Position, LogEntry, SystemConfig } from "@/types/motor";
+import { testConnection, moveToPosition, fetchSystemConfig } from "@/lib/api";
 
 const defaultPosition: Position = { x: 5, y: 3.5, z: 3 };
 
 export default function Home() {
+  const [config, setConfig] = useState<SystemConfig | null>(null);
   const [position, setPosition] = useState<Position>(defaultPosition);
   const [isConnected, setIsConnected] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
@@ -38,6 +39,18 @@ export default function Home() {
     }
   }
 
+  // Fetch config on mount
+  useEffect(() => {
+    fetchSystemConfig()
+      .then((cfg) => {
+        setConfig(cfg);
+        addLog("Configuration loaded from backend");
+      })
+      .catch((err) => {
+        addLog("Failed to load configuration", "error");
+        console.error(err);
+      });
+  }, []);
 
   async function handleMove(target: Position) {
     if (!isConnected || isMoving) return;
@@ -61,11 +74,12 @@ export default function Home() {
         <Header isConnected={isConnected} isMoving={isMoving} />
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-6">
-            <StageView position={position} />
+            <StageView config={config} position={position} />
             <SystemLog logs={logs} />
           </div>
           <div className="space-y-6">
             <PositionControl
+              config={config}
               position={position}
               onMove={handleMove}
               isConnected={isConnected}

@@ -11,10 +11,9 @@ class KinematicsSolver:
     def __init__(self):
         self.config = motor_config
         self.last_lengths: Optional[List[float]] = None
-        geo = self.config.geometry
-        self.max_x = max(geo.m1[0], geo.m2[0], geo.m3[0], geo.m4[0])
-        self.max_y = max(geo.m1[1], geo.m2[1], geo.m3[1], geo.m4[1])
-        self.max_z = max(geo.m1[2], geo.m2[2], geo.m3[2], geo.m4[2])
+        self.max_x = self.config.geometry.width_ft
+        self.max_y = self.config.geometry.height_ft
+        self.max_z = self.config.geometry.z_height_ft
 
     def _get_distance(self, p1: List[float], p2: List[float]) -> float:
         """Calculates 3D Euclidean distance between two points."""

@@ -3,7 +3,7 @@
  * Handles all HTTP communication with the motor control system
  */
 
-import type { HealthResponse, MoveResponse } from "@/types/motor";
+import type { HealthResponse, MoveResponse, SystemConfig } from "@/types/motor";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -43,6 +43,16 @@ export async function calibratePosition(
 
   if (!response.ok) {
     throw new Error(`Failed to calibrate: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchSystemConfig(): Promise<SystemConfig> {
+  const response = await fetch(`${API_BASE_URL}/config`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch system configuration");
   }
 
   return response.json();

@@ -35,3 +35,11 @@ export interface LogEntry {
   message: string;
   level?: "info" | "error" | "warning";
 }
+
+export interface SystemConfig {
+  geometry: {
+    width: number;
+    height: number;
+    z_height: number;
+  };
+}

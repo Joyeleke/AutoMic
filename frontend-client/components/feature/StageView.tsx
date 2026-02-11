@@ -7,14 +7,16 @@ import {
 } from "@/components/ui/Card";
 import { Mic2 } from "lucide-react";
 import GridOverlay from "@/components/ui/GridOverlay";
-import { Position } from "@/types/motor";
+import { Position, SystemConfig } from "@/types/motor";
 
 interface StageViewProps {
+  config: SystemConfig | null;
   position: Position;
 }
-export default function StageView({ position }: StageViewProps) {
-  const STAGE_WIDTH_FT = 12.25;
-  const STAGE_HEIGHT_FT = 12.17;
+export default function StageView({ config, position }: StageViewProps) {
+  const STAGE_WIDTH_FT = config?.geometry.width || 12.25;
+  const STAGE_HEIGHT_FT = config?.geometry.height || 12.17;
+  const STAGE_Z_HEIGHT_FT = config?.geometry.z_height || 7.93;
 
   const xPercent = (position.x / STAGE_WIDTH_FT) * 100;
   const yPercent = (position.y / STAGE_HEIGHT_FT) * 100;
@@ -88,7 +90,7 @@ export default function StageView({ position }: StageViewProps) {
                 {position.z.toFixed(2)}
               </div>
               <div className="text-xs text-muted-foreground">
-                feet (0-7.93&apos;)
+                feet (0-{STAGE_Z_HEIGHT_FT}&apos;)
               </div>
             </div>
           </div>

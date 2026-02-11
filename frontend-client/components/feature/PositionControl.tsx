@@ -13,18 +13,20 @@ import { Button } from "../ui/Button";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Input } from "../ui/Input";
 import { Move, AlertCircle, Power, Loader2 } from "lucide-react";
-import { Position } from "@/types/motor";
+import { Position, SystemConfig } from "@/types/motor";
 
 interface PositionControlProps {
+  config: SystemConfig | null;
   position: Position;
-  onMove: (newPos: Position) => Promise<void>;
+  onMove: (position: Position) => Promise<void>;
   isConnected: boolean;
   isMoving: boolean;
   onConnectToggle: () => void;
-  onCalibrate: (pos: Position) => void;
+  onCalibrate: (position: Position) => void;
 }
 
 export default function PositionControl({
+  config,
   position,
   onMove,
   isConnected,
@@ -48,7 +50,13 @@ export default function PositionControl({
     const num = parseFloat(value);
     if (isNaN(num)) return;
 
-    const bounds: Record<keyof Position, [number, number]> = { x: [0, 12.25], y: [0, 12.17], z: [0, 7.93] };
+    if (!config) return;
+
+    const bounds: Record<keyof Position, [number, number]> = {
+      x: [0, config.geometry.width],
+      y: [0, config.geometry.height],
+      z: [0, config.geometry.z_height],
+    };
     const [min, max] = bounds[key];
     const clamped = Math.max(min, Math.min(max, num));
 
@@ -136,7 +144,7 @@ export default function PositionControl({
                   type="number"
                   step="any"
                   min="0"
-                  max="12.25"
+                  max={config?.geometry.width || 100}
                   value={isNaN(pendingPosition.x) ? "" : pendingPosition.x}
                   onChange={(e) => handleInputChange("x", e.target.value)}
                   className="w-full"
@@ -152,7 +160,7 @@ export default function PositionControl({
                   type="number"
                   step="any"
                   min="0"
-                  max="12.17"
+                  max={config?.geometry.height || 100}
                   value={isNaN(pendingPosition.y) ? "" : pendingPosition.y}
                   onChange={(e) => handleInputChange("y", e.target.value)}
                   className="w-full"
@@ -168,7 +176,7 @@ export default function PositionControl({
                   type="number"
                   step="any"
                   min="0"
-                  max="7.93"
+                  max={config?.geometry.z_height || 100}
                   value={isNaN(pendingPosition.z) ? "" : pendingPosition.z}
                   onChange={(e) => handleInputChange("z", e.target.value)}
                   className="w-full"

@@ -19,7 +19,10 @@ class GeometrySettings(BaseModel):
     m1: List[float] = [6.43, 6.79, 7.93]   
     m2: List[float] = [12.25, 12.17, 4.25] 
     m3: List[float] = [0.75, 12.17, 4.25]  
-    m4: List[float] = [6.43, 0.00, 4.25]   
+    m4: List[float] = [6.43, 0.00, 4.25]
+    width_ft: float = 12.25
+    height_ft: float = 12.17
+    z_height_ft: float = 7.93
 
 class KinematicSettings(BaseModel):
     kinematic_step_size: float = 0.00064316 

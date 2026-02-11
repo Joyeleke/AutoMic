@@ -94,6 +94,17 @@ def check_motors():
 def health():
     return {"status": "healthy"}
 
+@app.get("/config")
+def get_config():
+    """Return current system configuration including geometry."""
+    return {
+        "geometry": {
+            "width": config.geometry.width_ft,
+            "height": config.geometry.height_ft,
+            "z_height": config.geometry.z_height_ft
+        }
+    }
+
 
 if __name__ == "__main__":
     import uvicorn
