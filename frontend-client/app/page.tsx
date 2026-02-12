@@ -39,7 +39,6 @@ export default function Home() {
     }
   }
 
-  // Fetch config on mount
   useEffect(() => {
     fetchSystemConfig()
       .then((cfg) => {
