@@ -90,6 +90,9 @@ class KinematicsSolver:
             
             print(f"KINEMATICS: {name} -> Steps: {steps}, Speed: {speed:.4f}")
             
+            if name == "motor2":
+                steps = -1 * steps
+            
             command_map[name] = CommandSequence.move_relative(
                 steps,
                 speed=speed,
