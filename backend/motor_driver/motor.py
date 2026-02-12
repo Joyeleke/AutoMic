@@ -50,7 +50,6 @@ class AsyncMotor:
         terminator = config.protocol.terminator_byte
         encoding = config.protocol.encoding
         
-        # Basic validation
         if len(data) < len(header) + len(terminator):
             return None
 
@@ -80,9 +79,6 @@ class AsyncMotor:
             self.writer.write(full_packet)
             await self.writer.drain()
 
-            # Read response
-            # Note: recv_buffer_size might need to be larger if responses are long, 
-            # but for SCL they are usually short.
             data = await asyncio.wait_for(
                 self.reader.read(config.motion.recv_buffer_size), 
                 timeout=self.timeout

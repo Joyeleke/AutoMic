@@ -63,11 +63,16 @@ async def move(request: MoveRequest):
     try:
         command_map = kinematics_solver.solve(request.x, request.y, request.z)
         if command_map:
-             await controller.execute_movement_async(command_map)
-        return {
-            "status": "success",
-            "position": request.model_dump()
-        }
+            await controller.execute_movement_async(command_map)
+            return {
+                "status": "success",
+                "position": request.model_dump()
+            }
+        else:
+            return {
+                "status": "error",
+                "position": request.model_dump()
+            }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

@@ -35,37 +35,17 @@ class MotorController:
             print(f"[{motor_name}] EXCEPTION: {e}")
             raise e
 
-    async def execute_movement_async(self, command_map: Dict[str, List[str]]):
-        """
-        Executes movement in two phases:
-        1. Setup: Send all configuration commands (AC, DE, VE, DI)
-        2. Execute: Send FL command to all motors simultaneously
-        """
-        print(f"\n[MotorController] Starting async movement execution for {len(command_map)} motor(s)")
-        
-        # Split commands into setup and trigger
-        setup_map = {}
-        trigger_cmd = SCLCommands.FEED_LENGTH
-        
-        for name, cmds in command_map.items():
-            # Filter out FL/FP commands for the setup phase
-            setup_cmds = [c for c in cmds if c not in [SCLCommands.FEED_LENGTH, SCLCommands.FEED_POSITION]]
-            setup_map[name] = setup_cmds
-            
-            # Check if this motor actually has a move command
-            if SCLCommands.FEED_POSITION in cmds:
-                trigger_cmd = SCLCommands.FEED_POSITION
-
-        # Phase 1: Setup
+    async def _send_setup_commands(self, command_map: Dict[str, List[str]]) -> None:
+        """Sends non-trigger commands to motors in parallel."""
         print("[MotorController] Phase 1: Setup - Sending configuration...")
-        setup_tasks = []
-        for name, cmds in setup_map.items():
-            setup_tasks.append(self._run_motor_async(name, cmds))
+        tasks = []
+        for name, cmds in command_map.items():
+            tasks.append(self._run_motor_async(name, cmds))
             
-        results = await asyncio.gather(*setup_tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         
         errors = {}
-        for name, res in zip(setup_map.keys(), results):
+        for name, res in zip(command_map.keys(), results):
             if isinstance(res, Exception):
                 errors[name] = str(res)
                 
@@ -73,27 +53,48 @@ class MotorController:
             print(f"[MotorController] Setup failed with errors: {errors}")
             raise RuntimeError(f"Setup phase failed: {errors}")
 
-        # Phase 2: Execute
-        print("[MotorController] Phase 1 Complete. Phase 2: Triggering execution...")
+    async def _trigger_motors(self, motor_names: List[str], trigger_cmd: str) -> None:
+        """Sends the trigger command to all motors simultaneously."""
+        print(f"[MotorController] Phase 2: Triggering execution with '{trigger_cmd}'...")
         
         async def send_trigger(name: str):
             conf = self.motor_config.get(name)
+            if not conf:
+                raise Exception(f"Motor {name} not configured")
             async with AsyncMotor(name=name, ip=conf.ip, port=conf.port) as motor:
                 await motor.send_command(trigger_cmd)
                 
-        trigger_tasks = [send_trigger(name) for name in command_map.keys()]
+        tasks = [send_trigger(name) for name in motor_names]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        # Launch all triggers
-        trigger_results = await asyncio.gather(*trigger_tasks, return_exceptions=True)
-        
-        trigger_errors = {}
-        for name, res in zip(command_map.keys(), trigger_results):
+        errors = {}
+        for name, res in zip(motor_names, results):
              if isinstance(res, Exception):
-                trigger_errors[name] = str(res)
+                errors[name] = str(res)
 
-        if trigger_errors:
-             print(f"[MotorController] Trigger failed with errors: {trigger_errors}")
-             raise RuntimeError(f"Trigger phase failed: {trigger_errors}")
+        if errors:
+             print(f"[MotorController] Trigger failed with errors: {errors}")
+             raise RuntimeError(f"Trigger phase failed: {errors}")
+
+    async def execute_movement_async(self, command_map: Dict[str, List[str]], trigger_cmd: str = SCLCommands.FEED_LENGTH):
+        """
+        Executes movement in two phases:
+        1. Setup: Send all configuration commands (AC, DE, VE, DI)
+        2. Execute: Send trigger command (default FL) to all motors simultaneously
+        """
+        print(f"\n[MotorController] Starting async movement execution for {len(command_map)} motor(s)")
+        
+        setup_map = {}
+        trigger_cmds = [SCLCommands.FEED_LENGTH, SCLCommands.FEED_POSITION]
+        
+        for name, cmds in command_map.items():
+            setup_cmds = [c for c in cmds if c not in trigger_cmds]
+            setup_map[name] = setup_cmds
+
+        await self._send_setup_commands(setup_map)
+
+        print("[MotorController] Phase 1 Complete.")
+        await self._trigger_motors(list(command_map.keys()), trigger_cmd)
              
         print("[MotorController] Movement execution completed successfully\n")
 
