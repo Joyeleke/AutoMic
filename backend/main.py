@@ -49,7 +49,7 @@ controller = MotorController(motor_config=config.motors)
 kinematics_solver = KinematicsSolver()
 
 @app.post("/calibrate")
-def calibrate(request: MoveRequest):
+async def calibrate(request: MoveRequest):
     """Endpoint to calibrate the current position of the microphone."""
     try:
         kinematics_solver.calibrate_position(request.x, request.y, request.z)
@@ -58,11 +58,12 @@ def calibrate(request: MoveRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/move")
-def move(request: MoveRequest):
+async def move(request: MoveRequest):
     """Endpoint to move microphone to specified XYZ position."""
     try:
         command_map = kinematics_solver.solve(request.x, request.y, request.z)
-        controller.execute_motors(command_map, parallel=True)
+        if command_map:
+             await controller.execute_movement_async(command_map)
         return {
             "status": "success",
             "position": request.model_dump()
@@ -74,19 +75,19 @@ def move(request: MoveRequest):
 
 
 @app.post("/emergency-stop")
-def emergency_stop():
+async def emergency_stop():
     """Immediately halt all motors."""
     try:
         stop_command = {"motor1": [CommandSequence.stop()], "motor2": [CommandSequence.stop()], "motor3": [CommandSequence.stop()], "motor4": [CommandSequence.stop()]}
-        controller.execute_motors(stop_command, parallel=True)
+        await controller.execute_movement_async(stop_command)
         return {"status": "stopped"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/motors/status")
-def check_motors():
+async def check_motors():
     """Check if all 4 motors are reachable."""
-    results = controller.check_connections()
+    results = await controller.check_connections_async()
     all_connected = all(status == "connected" for status in results.values())
     return {"motors": results, "all_connected": all_connected}
 

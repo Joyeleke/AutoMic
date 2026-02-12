@@ -1,11 +1,11 @@
 from .motor_controller import MotorController
 from .commands import CommandSequence
-from .motor import Motor
+from .motor import AsyncMotor
 from .config import config
 
 __all__ = [
     "MotorController",
     "CommandSequence",
-    "Motor",
+    "AsyncMotor",
     "config",
 ]

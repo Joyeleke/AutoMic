@@ -38,6 +38,7 @@ class CommandSequence:
     @staticmethod
     def move_relative(position: float, speed: float, accel: float, decel: float) -> List[str]:
         """Generates a command list for a relative move."""
+        speed = round(speed, 4)
         return [
             SCLCommands.MOTION_ENABLED,
             f"{SCLCommands.ACCELERATION}{accel}",
