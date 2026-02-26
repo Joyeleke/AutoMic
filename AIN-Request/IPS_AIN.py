@@ -1,5 +1,6 @@
 import socket
 import time
+import re
 
 # ----------------------------
 # Motor IP configuration
@@ -11,7 +12,7 @@ MOTOR_IPS = [
     "192.168.0.40",  # Motor with switch at '4'
 ]
 
-PORT = 7776          # ⚠️ Most Applied Motion drives use 7776 (verify!)
+PORT = 7776          # Common for Applied Motion SCL over Ethernet (verify for your setup)
 TIMEOUT = 0.5
 
 # ----------------------------
@@ -37,13 +38,43 @@ for ip in MOTOR_IPS:
         print(f"❌ Failed to connect to {ip}: {e}")
 
 # ----------------------------
-# Command helper
+# Parsing helper
 # ----------------------------
-def request_ain(sock):
+_num_pat = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
+
+def parse_numeric(response: str):
+    """
+    Drives may respond with:
+      "2048"
+      "IA=2048"
+      "IA1=2048"
+      "2048\r\n"
+    This extracts the first numeric token.
+    """
+    m = _num_pat.search(response)
+    if not m:
+        return None
+    token = m.group(0)
+    # Prefer int if it looks like an int, else float
+    return int(token) if token.isdigit() or (token.startswith(("+", "-")) and token[1:].isdigit()) else float(token)
+
+# ----------------------------
+# Command helper (IA)
+# ----------------------------
+def request_ain(sock, channel=1, raw=True):
+    """
+    For SSM23Q/IP, analog input is read via IA.
+    - raw=True uses IA<channel> (often returns raw ADC counts)
+    - raw=False uses IA (often returns scaled analog command, model/config dependent)
+    """
     try:
-        sock.sendall(b"AI\r")
-        response = sock.recv(64).decode().strip()
-        return int(response)
+        cmd = f"IA{channel}" if raw else "IA"
+        sock.sendall((cmd + "\r").encode())
+
+        # Read a chunk; most drives reply in a single short line.
+        response = sock.recv(128).decode(errors="replace").strip()
+        val = parse_numeric(response)
+        return val
     except Exception:
         return None
 
@@ -53,15 +84,20 @@ def request_ain(sock):
 try:
     while True:
         for ip, sock in sockets.items():
-            ain = request_ain(sock)
+            # Most common: IA1 gives raw counts. If yours uses a different channel, change channel=1.
+            ain = request_ain(sock, channel=1, raw=True)
 
             if ain is None:
-                print(f"{ip} | ⚠️ No response")
+                print(f"{ip} | ⚠️ No response / parse failed")
                 continue
 
-            voltage = (ain / ADC_MAX) * VREF
-
-            print(f"{ip} | AIN: {ain:4d} | Voltage: {voltage:.3f} V")
+            # If IA1 returns raw ADC counts, this conversion is correct:
+            # voltage = (count / ADC_MAX) * VREF
+            if isinstance(ain, (int, float)):
+                voltage = (float(ain) / ADC_MAX) * VREF
+                print(f"{ip} | IA1: {ain} | Voltage: {voltage:.3f} V")
+            else:
+                print(f"{ip} | IA1: {ain} | Voltage: N/A")
 
         print("-" * 60)
         time.sleep(SAMPLE_PERIOD)
