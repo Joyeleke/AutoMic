@@ -18,7 +18,7 @@ TIMEOUT = 0.5
 # ----------------------------
 # ADC / Analog parameters
 # ----------------------------
-ADC_MAX = 4095
+ADC_MAX = 32760
 VREF = 5.0
 SAMPLE_PERIOD = 0.05
 
