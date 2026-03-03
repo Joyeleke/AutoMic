@@ -98,6 +98,22 @@ class MotorController:
              
         print("[MotorController] Movement execution completed successfully\n")
 
+    async def emergency_stop_async(self) -> None:
+        """Immediately sends ST (Stop) to all motors, bypassing the movement pipeline."""
+        
+        print("[MotorController] !!! EMERGENCY STOP TRIGGERED !!!")
+
+        motor_names = list(self.motor_config.keys())
+        tasks = [self._run_motor_async(name, [SCLCommands.STOP]) for name in motor_names]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        failures = [name for name, res in zip(motor_names, results) if isinstance(res, Exception)]
+        if failures:
+            print(f"[MotorController] WARNING: Stop failed for: {failures}")
+            raise RuntimeError(f"Emergency stop failed for motors: {failures}")
+
+        print("[MotorController] All motors stopped successfully.")
+
     async def check_connections_async(self) -> Dict[str, str]:
         """Checks connection status of all configured motors asynchronously."""
         results = {}

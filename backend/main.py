@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from motor_driver import MotorController, config
-from motor_driver.commands import CommandSequence
 from kinematic import KinematicsSolver
 
 class MoveRequest(BaseModel):
@@ -83,8 +82,7 @@ async def move(request: MoveRequest):
 async def emergency_stop():
     """Immediately halt all motors."""
     try:
-        stop_command = {"motor1": [CommandSequence.stop()], "motor2": [CommandSequence.stop()], "motor3": [CommandSequence.stop()], "motor4": [CommandSequence.stop()]}
-        await controller.execute_movement_async(stop_command)
+        await controller.emergency_stop_async()
         return {"status": "stopped"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
