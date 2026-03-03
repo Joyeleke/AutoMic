@@ -10,10 +10,10 @@ import { PlusIcon } from "lucide-react";
 import { Position } from "@/types/motor";
 
 const presets: Position[] = [
-  { x: 5, y: 2, z: 2 },
-  { x: 5, y: 3.5, z: 5 },
-  { x: 5, y: 5, z: 6 },
-  { x: 5, y: 3.5, z: 3 },
+  { x: 60, y: 24, z: 24 },
+  { x: 60, y: 42, z: 60 },
+  { x: 60, y: 60, z: 72 },
+  { x: 60, y: 42, z: 36 },
 ];
 
 const presetNames = [
@@ -54,9 +54,9 @@ export default function PresetList({ onLoadPreset }: PresetListProps) {
                 {presetNames[index].description}
               </p>
               <div className="flex gap-4 mt-2 text-xs">
-                <span>X: {preset.x}&apos;</span>
-                <span>Y: {preset.y}&apos;</span>
-                <span>Z: {preset.z}&apos;</span>
+                <span>X: {preset.x}&quot;</span>
+                <span>Y: {preset.y}&quot;</span>
+                <span>Z: {preset.z}&quot;</span>
               </div>
             </div>
             <Button onClick={() => onLoadPreset(preset)}>Load</Button>

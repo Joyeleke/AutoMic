@@ -137,7 +137,7 @@ export default function PositionControl({
             <div className="flex justify-between py-4">
               <div className="flex flex-col gap-2 w-1/4">
                 <Label htmlFor="x-position" className="text-sm font-medium">
-                  X Position (ft)
+                  X Position (in)
                 </Label>
                 <Input
                   id="x-position"
@@ -149,11 +149,11 @@ export default function PositionControl({
                   onChange={(e) => handleInputChange("x", e.target.value)}
                   className="w-full"
                 />
-                <p className="text-xs text-gray-500">Range: 0-12.25&#39;</p>
+                <p className="text-xs text-gray-500">Range: 0-147"</p>
               </div>
               <div className="flex flex-col gap-2 w-1/4">
                 <Label htmlFor="y-position" className="text-sm font-medium">
-                  Y Position (ft)
+                  Y Position (in)
                 </Label>
                 <Input
                   id="y-position"
@@ -165,11 +165,11 @@ export default function PositionControl({
                   onChange={(e) => handleInputChange("y", e.target.value)}
                   className="w-full"
                 />
-                <p className="text-xs text-gray-500">Range: 0-12.17&#39;</p>
+                <p className="text-xs text-gray-500">Range: 0-146.04"</p>
               </div>
               <div className="flex flex-col gap-2 w-1/3">
                 <Label htmlFor="z-position" className="text-sm font-medium">
-                  Z Position (ft)
+                  Z Position (in)
                 </Label>
                 <Input
                   id="z-position"
@@ -181,7 +181,7 @@ export default function PositionControl({
                   onChange={(e) => handleInputChange("z", e.target.value)}
                   className="w-full"
                 />
-                <p className="text-xs text-gray-500">Range: 0-7.93&#39;</p>
+                <p className="text-xs text-gray-500">Range: 0-95.16"</p>
               </div>
             </div>
           </fieldset>

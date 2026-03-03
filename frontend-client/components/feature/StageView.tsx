@@ -14,19 +14,19 @@ interface StageViewProps {
   position: Position;
 }
 export default function StageView({ config, position }: StageViewProps) {
-  const STAGE_WIDTH_FT = config?.geometry.width || 12.25;
-  const STAGE_HEIGHT_FT = config?.geometry.height || 12.17;
-  const STAGE_Z_HEIGHT_FT = config?.geometry.z_height || 7.93;
+  const STAGE_WIDTH_IN = config?.geometry.width || 147.0;
+  const STAGE_HEIGHT_IN = config?.geometry.height || 146.04;
+  const STAGE_Z_HEIGHT_IN = config?.geometry.z_height || 95.16;
 
-  const xPercent = (position.x / STAGE_WIDTH_FT) * 100;
-  const yPercent = (position.y / STAGE_HEIGHT_FT) * 100;
+  const xPercent = (position.x / STAGE_WIDTH_IN) * 100;
+  const yPercent = (position.y / STAGE_HEIGHT_IN) * 100;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Stage View</CardTitle>
         <CardDescription>
-          {STAGE_WIDTH_FT}&apos; x {STAGE_HEIGHT_FT}&apos; Operating Area
+          {STAGE_WIDTH_IN}&quot; x {STAGE_HEIGHT_IN}&quot; Operating Area
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -34,7 +34,7 @@ export default function StageView({ config, position }: StageViewProps) {
           <div className="relative aspect-[10/7] w-full overflow-hidden rounded-lg border-2 border-primary/30 bg-muted/30">
             <div className="absolute left-2 top-2 z-10">
               <div className="rounded bg-background/90 px-2 py-1 text-xs font-medium backdrop-blur">
-                {STAGE_WIDTH_FT}&apos; x {STAGE_HEIGHT_FT}&apos; Operating Area
+                {STAGE_WIDTH_IN}&quot; x {STAGE_HEIGHT_IN}&quot; Operating Area
               </div>
             </div>
             <GridOverlay rows={12} cols={12} />
@@ -68,7 +68,7 @@ export default function StageView({ config, position }: StageViewProps) {
                 {position.x.toFixed(2)}
               </div>
               <div className="text-xs text-muted-foreground">
-                feet (0-{STAGE_WIDTH_FT}&apos;)
+                inches (0-{STAGE_WIDTH_IN}&quot;)
               </div>
             </div>
             <div className="space-y-1 rounded-lg border bg-card p-3">
@@ -79,7 +79,7 @@ export default function StageView({ config, position }: StageViewProps) {
                 {position.y.toFixed(2)}
               </div>
               <div className="text-xs text-muted-foreground">
-                feet (0-{STAGE_HEIGHT_FT}&apos;)
+                inches (0-{STAGE_HEIGHT_IN}&quot;)
               </div>
             </div>
             <div className="space-y-1 rounded-lg border bg-card p-3">
@@ -90,7 +90,7 @@ export default function StageView({ config, position }: StageViewProps) {
                 {position.z.toFixed(2)}
               </div>
               <div className="text-xs text-muted-foreground">
-                feet (0-{STAGE_Z_HEIGHT_FT}&apos;)
+                inches (0-{STAGE_Z_HEIGHT_IN}&quot;)
               </div>
             </div>
           </div>

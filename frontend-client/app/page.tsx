@@ -9,7 +9,7 @@ import SystemLog from "@/components/feature/SystemLog";
 import { Position, LogEntry, SystemConfig } from "@/types/motor";
 import { testConnection, moveToPosition, fetchSystemConfig } from "@/lib/api";
 
-const defaultPosition: Position = { x: 5, y: 3.5, z: 3 };
+const defaultPosition: Position = { x: 60, y: 42, z: 36 };
 
 export default function Home() {
   const [config, setConfig] = useState<SystemConfig | null>(null);

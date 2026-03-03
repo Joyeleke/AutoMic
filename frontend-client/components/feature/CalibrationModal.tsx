@@ -27,7 +27,7 @@ export default function CalibrationModal({
     onClose,
     onCalibrateSuccess,
 }: CalibrationModalProps) {
-    const [pos, setPos] = useState<Position>({ x: 5, y: 3.5, z: 0 });
+    const [pos, setPos] = useState<Position>({ x: 60, y: 42, z: 0 });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -86,7 +86,7 @@ export default function CalibrationModal({
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="cal-x" className="text-right">
-                            X (ft)
+                            X (in)
                         </Label>
                         <Input
                             id="cal-x"
@@ -99,7 +99,7 @@ export default function CalibrationModal({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="cal-y" className="text-right">
-                            Y (ft)
+                            Y (in)
                         </Label>
                         <Input
                             id="cal-y"
@@ -112,7 +112,7 @@ export default function CalibrationModal({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="cal-z" className="text-right">
-                            Z (ft)
+                            Z (in)
                         </Label>
                         <Input
                             id="cal-z"

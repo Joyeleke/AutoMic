@@ -103,9 +103,9 @@ def get_config():
     """Return current system configuration including geometry."""
     return {
         "geometry": {
-            "width": config.geometry.width_ft,
-            "height": config.geometry.height_ft,
-            "z_height": config.geometry.z_height_ft
+            "width": config.geometry.width_in,
+            "height": config.geometry.height_in,
+            "z_height": config.geometry.z_height_in
         }
     }
 

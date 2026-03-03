@@ -16,13 +16,13 @@ class MotionSettings(BaseModel):
     recv_buffer_size: int = 1024
 
 class GeometrySettings(BaseModel):
-    m1: List[float] = [6.43, 6.79, 7.93]   
-    m2: List[float] = [12.25, 12.17, 4.25] 
-    m3: List[float] = [0.75, 12.17, 4.25]  
-    m4: List[float] = [6.43, 0.00, 4.25]
-    width_ft: float = 12.25
-    height_ft: float = 12.17
-    z_height_ft: float = 7.93
+    m1: List[float] = [77.16, 81.48, 95.16]    
+    m2: List[float] = [147.0, 146.04, 51.0]    
+    m3: List[float] = [9.0, 146.04, 51.0]      
+    m4: List[float] = [77.16, 0.00, 51.0]    
+    width_in: float = 147.0      
+    height_in: float = 146.04    
+    z_height_in: float = 95.16   
 
 class KinematicSettings(BaseModel):
     kinematic_step_size: float = 0.00064316 
