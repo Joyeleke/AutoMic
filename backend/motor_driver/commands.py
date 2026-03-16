@@ -18,6 +18,9 @@ class SCLCommands:
     STOP = "ST"
     ALARM_RESET = "AR"
     ALARM_CODE = "AL"
+    ANALOG_SOURCE = "AS3"
+    INPUT_FORMAT_DECIMAL = "IFD"
+    ANALOG_INPUT = "IA"
 
 
 class CommandSequence:
@@ -57,3 +60,13 @@ class CommandSequence:
     def stop() -> str:
         """Stops the drive."""
         return SCLCommands.STOP
+
+    @staticmethod
+    def configure_tension_sensor() -> List[str]:
+        """Commands to set analog source to 3 for single ended 0-5V and return format to decimal."""
+        return [SCLCommands.ANALOG_SOURCE, SCLCommands.INPUT_FORMAT_DECIMAL]
+
+    @staticmethod
+    def read_analog_input() -> str:
+        """Command to read analog input depending on previous AS command."""
+        return SCLCommands.ANALOG_INPUT

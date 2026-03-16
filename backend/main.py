@@ -3,18 +3,24 @@ FastAPI application for AUTOMIC motor control system.
 Exposes REST endpoints for frontend to control motors.
 """
 
+from typing import Literal
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from motor_driver import MotorController, config
 from kinematic import KinematicsSolver
+from tension import TensionService
 
 class MoveRequest(BaseModel):
     """Request to move microphone to XYZ position."""
     x: float
     y: float
     z: float
+
+class TensionFixRequest(BaseModel):
+    motor: str
+    direction: Literal["tighten", "loosen"]
 
 app = FastAPI(
     title="AUTOMIC Motor Control API",
@@ -46,6 +52,7 @@ app.add_middleware(
 
 controller = MotorController(motor_config=config.motors)
 kinematics_solver = KinematicsSolver()
+tension_service = TensionService(controller)
 
 @app.post("/calibrate")
 async def calibrate(request: MoveRequest):
@@ -93,6 +100,42 @@ async def check_motors():
     results = await controller.check_connections_async()
     all_connected = all(status == "connected" for status in results.values())
     return {"motors": results, "all_connected": all_connected}
+
+@app.get("/tension")
+async def get_all_tension():
+    """Poll tension across all supported motors."""
+    try:
+        return await tension_service.poll_all()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/tension/{motor}")
+async def get_single_tension(motor: str):
+    """Poll tension for a specific motor."""
+    try:
+        return await tension_service.poll_single(motor)
+    except ValueError as e:
+         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/tension/fix")
+async def fix_tension(request: TensionFixRequest):
+    """Admin endpoint to manually loosen or tighten a single cable."""
+    try:
+        return await tension_service.fix_tension(request.motor, request.direction)
+    except ValueError as e:
+         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/tension/auto-fix")
+async def auto_fix_tension(max_iterations: int = 5):
+    """Automatically nudges all out-of-range cables"""
+    try:
+        return await tension_service.auto_fix_all(max_iterations=max_iterations)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 def health():

@@ -6,6 +6,7 @@ import PositionControl from "@/components/feature/PositionControl";
 import PresetList from "@/components/feature/PresetList";
 import StageView from "@/components/feature/StageView";
 import SystemLog from "@/components/feature/SystemLog";
+import TensionPanel from "@/components/feature/TensionPanel";
 import { Position, LogEntry, SystemConfig } from "@/types/motor";
 import { testConnection, moveToPosition, fetchSystemConfig } from "@/lib/api";
 
@@ -89,11 +90,12 @@ export default function Home() {
                 addLog(`System calibrated to X:${pos.x} Y:${pos.y} Z:${pos.z}`);
               }}
             />
+            <TensionPanel isConnected={isConnected} onLog={addLog} />
             <PresetList
               onLoadPreset={(preset) => {
                 setPosition(preset);
                 addLog(
-                  `Loaded preset: X:${preset.x}, Y:${preset.y}, Z:${preset.z}`
+                  `Loaded preset: X:${preset.x}, Y:${preset.y}, Z:${preset.z}`,
                 );
               }}
             />

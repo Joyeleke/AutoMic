@@ -43,3 +43,9 @@ export interface SystemConfig {
     z_height: number;
   };
 }
+
+export interface TensionReading {
+  motor: string;
+  voltage: number;
+  tension_status: "ok" | "low" | "high" | "error";
+}

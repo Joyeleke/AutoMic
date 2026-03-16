@@ -9,72 +9,74 @@ from .config import MotorSettings
 from .commands import CommandSequence, SCLCommands
 
 class MotorController:
-    """
-    Coordinates execution of commands across multiple motors.
-    """
+    """Coordinates execution of commands across multiple motors."""
 
     def __init__(self, motor_config: Dict[str, MotorSettings]):
         """Initializes the MotorController with motor configurations."""
         self.motor_config = motor_config
 
-    async def _run_motor_async(self, motor_name: str, commands: List[str]) -> bool:
-        """Execute command sequence on a single motor asynchronously."""
+    async def execute_async(self, motor_name: str, commands: List[str], require_response: bool = False) -> List[str] | bool:
+        """Execute a sequence of commands on a single motor asynchronously."""
+
         config = self.motor_config.get(motor_name)
         if not config:
             print(f"[{motor_name}] ERROR: Motor not configured")
+            if require_response:
+                raise ValueError(f"Motor {motor_name} not configured")
             return False
             
         try:
             async with AsyncMotor(name=motor_name, ip=config.ip, port=config.port) as motor:
+                responses = []
                 for cmd in commands:
-                    if await motor.send_command(cmd) is None:
+                    res = await motor.send_command(cmd)
+                    if res is None:
                         raise Exception(f"Command '{cmd}' failed")
-                print(f"[{motor_name}] ✓ All commands completed")
+                    responses.append(res)
+                
+                if require_response:
+                    return responses
+
+                print(f"[{motor_name}] ✓ All {len(commands)} command(s) completed")
                 return True
         except Exception as e:
             print(f"[{motor_name}] EXCEPTION: {e}")
             raise e
 
-    async def _send_setup_commands(self, command_map: Dict[str, List[str]]) -> None:
-        """Sends non-trigger commands to motors in parallel."""
-        print("[MotorController] Phase 1: Setup - Sending configuration...")
+    async def execute_batch_async(self, command_map: Dict[str, List[str]], require_response: bool = False) -> Dict[str, List[str] | bool]:
+        """Executes lists of varying commands across multiple motors in parallel."""
+
         tasks = []
         for name, cmds in command_map.items():
-            tasks.append(self._run_motor_async(name, cmds))
+            tasks.append(self.execute_async(name, cmds, require_response=require_response))
             
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        task_results = await asyncio.gather(*tasks, return_exceptions=True)
         
+        results_map = {}
         errors = {}
-        for name, res in zip(command_map.keys(), results):
+        
+        for name, res in zip(command_map.keys(), task_results):
             if isinstance(res, Exception):
                 errors[name] = str(res)
+                results_map[name] = False if not require_response else []
+            else:
+                results_map[name] = res
                 
         if errors:
-            print(f"[MotorController] Setup failed with errors: {errors}")
-            raise RuntimeError(f"Setup phase failed: {errors}")
+            print(f"[MotorController] Batch execution failed with errors: {errors}")
+            raise RuntimeError(f"Batch execution failed: {errors}")
+            
+        return results_map
 
     async def _trigger_motors(self, motor_names: List[str], trigger_cmd: str) -> None:
         """Sends the trigger command to all motors simultaneously."""
-        print(f"[MotorController] Phase 2: Triggering execution with '{trigger_cmd}'...")
         
-        async def send_trigger(name: str):
-            conf = self.motor_config.get(name)
-            if not conf:
-                raise Exception(f"Motor {name} not configured")
-            async with AsyncMotor(name=name, ip=conf.ip, port=conf.port) as motor:
-                await motor.send_command(trigger_cmd)
-                
-        tasks = [send_trigger(name) for name in motor_names]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        errors = {}
-        for name, res in zip(motor_names, results):
-             if isinstance(res, Exception):
-                errors[name] = str(res)
-
-        if errors:
-             print(f"[MotorController] Trigger failed with errors: {errors}")
-             raise RuntimeError(f"Trigger phase failed: {errors}")
+        command_map = {name: [trigger_cmd] for name in motor_names}
+        try:
+            await self.execute_batch_async(command_map)
+        except RuntimeError as e:
+            print(f"[MotorController] Trigger failed: {e}")
+            raise RuntimeError(f"Trigger phase failed: {e}")
 
     async def execute_movement_async(self, command_map: Dict[str, List[str]], trigger_cmd: str = SCLCommands.FEED_LENGTH):
         """
@@ -82,6 +84,7 @@ class MotorController:
         1. Setup: Send all configuration commands (AC, DE, VE, DI)
         2. Execute: Send trigger command (default FL) to all motors simultaneously
         """
+
         print(f"\n[MotorController] Starting async movement execution for {len(command_map)} motor(s)")
         
         setup_map = {}
@@ -91,11 +94,12 @@ class MotorController:
             setup_cmds = [c for c in cmds if c not in trigger_cmds]
             setup_map[name] = setup_cmds
 
-        await self._send_setup_commands(setup_map)
-
-        print("[MotorController] Phase 1 Complete.")
-        await self._trigger_motors(list(command_map.keys()), trigger_cmd)
-             
+        print("[MotorController] Phase 1: Setup - Sending configuration...")
+        await self.execute_batch_async(setup_map)
+        
+        print(f"[MotorController] Phase 2: Triggering execution with '{trigger_cmd}'...")
+        await self._trigger_motors(list(command_map.keys()), trigger_cmd)  
+        
         print("[MotorController] Movement execution completed successfully\n")
 
     async def emergency_stop_async(self) -> None:
@@ -104,7 +108,7 @@ class MotorController:
         print("[MotorController] !!! EMERGENCY STOP TRIGGERED !!!")
 
         motor_names = list(self.motor_config.keys())
-        tasks = [self._run_motor_async(name, [SCLCommands.STOP]) for name in motor_names]
+        tasks = [self.execute_async(name, [SCLCommands.STOP]) for name in motor_names]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         failures = [name for name, res in zip(motor_names, results) if isinstance(res, Exception)]
@@ -116,21 +120,21 @@ class MotorController:
 
     async def check_connections_async(self) -> Dict[str, str]:
         """Checks connection status of all configured motors asynchronously."""
+        
         results = {}
         
-        async def check_single(name, conf):
+        async def check_single(name):
             status = "disconnected"
             try:
-                async with AsyncMotor(name=name, ip=conf.ip, port=conf.port, timeout=2.0) as motor:
-                    response = await motor.send_command(CommandSequence.get_status())
-                    if response is not None:
-                        status = "connected"
+                response = await self.execute_async(name, [CommandSequence.get_status()], require_response=True)
+                if response:
+                    status = "connected"
             except Exception:
                 pass
             return name, status
 
         print(f"\n[MotorController] Checking connections async for {len(self.motor_config)} motor(s)...")
-        tasks = [check_single(n, c) for n, c in self.motor_config.items()]
+        tasks = [check_single(n) for n in self.motor_config.keys()]
         check_results = await asyncio.gather(*tasks)
         
         for name, status in check_results:

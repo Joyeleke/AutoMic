@@ -27,6 +27,13 @@ class GeometrySettings(BaseModel):
 class KinematicSettings(BaseModel):
     kinematic_step_size: float = 0.00064316 
 
+class TensionSettings(BaseModel):
+    low_voltage_threshold: float = 0.75
+    high_voltage_threshold: float = 1.2
+    correction_steps: int = 50
+    sensor_equipped_motors: List[str] = ["motor2", "motor3", "motor4"]
+    inverted_tension_motors: List[str] = ["motor2"]
+
 class MotorConfig(BaseSettings):
     motor1_ip: str = "192.168.1.10"
     motor2_ip: str = "192.168.1.20"
@@ -41,6 +48,7 @@ class MotorConfig(BaseSettings):
     motion: MotionSettings = MotionSettings()
     geometry: GeometrySettings = GeometrySettings()
     kinematics: KinematicSettings = KinematicSettings()
+    tension: TensionSettings = TensionSettings()
     
     @property
     def motors(self) -> Dict[str, MotorSettings]:
