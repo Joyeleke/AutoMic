@@ -4,7 +4,10 @@ import threading
 
 # --- Configuration ---
 MOTOR_IPS = [
-    "192.168.1.20", # Motor 1
+    "192.168.1.10", # Motor 1
+    "192.168.1.20", # Motor 2
+    "192.168.1.30", # Motor 3
+    "192.168.0.40", # Motor 4
 ]
 
 # --- Motion Parameters ---
@@ -29,11 +32,11 @@ class SCL_Motor:
         self.socket.connect(self.drive_address)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self):
         """Closes the socket."""
         self.socket.close()
 
-    def send_command(self, command: str) -> str | None:
+    def send_command(self, command: str) -> str:
         """Sends a single SCL command and returns the response."""
         try:
             packet = command.encode('ascii')

@@ -15,11 +15,17 @@ class TensionService:
         self.config = config.tension
         self.sensor_motors = self.config.sensor_equipped_motors
 
-    def _determine_status(self, voltage: float) -> Literal["ok", "low", "high"]:
-        if voltage < self.config.low_voltage_threshold:
-            return "low"
-        if voltage > self.config.high_voltage_threshold:
-            return "high"
+    def _determine_status(self, motor_name: str, voltage: float) -> Literal["ok", "low", "high"]:
+        if motor_name in self.config.inverted_tension_motors:
+            if voltage > self.config.inverted_low_voltage_threshold:
+                return "low"
+            if voltage < self.config.inverted_high_voltage_threshold:
+                return "high"
+        else:
+            if voltage < self.config.low_voltage_threshold:
+                return "low"
+            if voltage > self.config.high_voltage_threshold:
+                return "high"
         return "ok"
 
     async def poll_single(self, motor_name: str) -> TensionReading:
@@ -46,13 +52,12 @@ class TensionService:
                 response = responses[-1]
                 print(f"[TensionService] Raw response for {motor_name}: {response}")
             
-                # Fix code below based on raw response format
                 if "=" in response:
                     val_str = response.split("=")[1]
                 else:
                     val_str = response.replace("+", "").strip()
                 voltage = float(val_str)
-                status = self._determine_status(voltage)
+                status = self._determine_status(motor_name, voltage)
             else:
                 print(f"[TensionService] Empty response for {motor_name}")
                 status = "error"
@@ -96,9 +101,6 @@ class TensionService:
         steps = self.config.correction_steps
         if direction == "loosen":
             steps = -steps
-
-        if motor_name in self.config.inverted_tension_motors:
-             steps = -steps
 
         cmds = CommandSequence.move_relative(
             position=steps,

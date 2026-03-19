@@ -28,8 +28,10 @@ class KinematicSettings(BaseModel):
     kinematic_step_size: float = 0.00064316 
 
 class TensionSettings(BaseModel):
-    low_voltage_threshold: float = 0.75
-    high_voltage_threshold: float = 1.2
+    low_voltage_threshold: float = 0.1
+    high_voltage_threshold: float = 0.6
+    inverted_low_voltage_threshold: float = 4.9
+    inverted_high_voltage_threshold: float = 4.4
     correction_steps: int = 50
     sensor_equipped_motors: List[str] = ["motor2", "motor3", "motor4"]
     inverted_tension_motors: List[str] = ["motor2"]
