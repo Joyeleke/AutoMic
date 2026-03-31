@@ -161,7 +161,7 @@ export default function TensionPanel({ isConnected, onLog }: TensionPanelProps) 
                     size="icon"
                     className="h-7 w-7 rounded-full"
                     title="Loosen cable"
-                    disabled={!isConnected || isFixing !== null || reading.tension_status === "error"}
+                    disabled={!isConnected || isFixing !== null || reading.tension_status === "error" || reading.tension_status === "ok"}
                     onClick={() => handleFix(reading.motor, "loosen")}
                   >
                     <Minus className="h-3 w-3" />
@@ -171,7 +171,7 @@ export default function TensionPanel({ isConnected, onLog }: TensionPanelProps) 
                     size="icon"
                     className="h-7 w-7 rounded-full"
                     title="Tighten cable"
-                    disabled={!isConnected || isFixing !== null || reading.tension_status === "error"}
+                    disabled={!isConnected || isFixing !== null || reading.tension_status === "error" || reading.tension_status === "ok"}
                     onClick={() => handleFix(reading.motor, "tighten")}
                   >
                     <Plus className="h-3 w-3" />
