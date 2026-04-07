@@ -148,7 +148,13 @@ def get_config():
         "geometry": {
             "width": config.geometry.width_in,
             "height": config.geometry.height_in,
-            "z_height": config.geometry.z_height_in
+            "z_height": config.geometry.z_height_in,
+            "motors": {
+                "m1": config.geometry.m1,
+                "m2": config.geometry.m2,
+                "m3": config.geometry.m3,
+                "m4": config.geometry.m4
+            }
         }
     }
 

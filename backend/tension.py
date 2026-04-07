@@ -82,7 +82,7 @@ class TensionService:
         for motor_name, res in zip(self.sensor_motors, results):
             if isinstance(res, Exception):
                 print(f"[TensionService] poll_all exception for {motor_name}: {res}")
-                readings.append(TensionReading(motor=motor_name, voltage=0.0, tension_status="ok"))
+                readings.append(TensionReading(motor=motor_name, voltage=0.0, tension_status="error"))
             else:
                 readings.append(res)
         
@@ -97,6 +97,7 @@ class TensionService:
 
         if motor_name not in self.sensor_motors:
             raise ValueError(f"Motor {motor_name} doesn't support tension fixing.")
+
 
         steps = self.config.correction_steps
         if direction == "loosen":
@@ -125,7 +126,9 @@ class TensionService:
             all_ok = True
 
             for r in readings:
-                if r.tension_status == "error":
+                if r.tension_status == "ok":
+                    continue
+                elif r.tension_status == "error":
                     continue
                 elif r.tension_status == "low":
                     await self.fix_tension(r.motor, "tighten")

@@ -9,10 +9,12 @@ import SystemLog from "@/components/feature/SystemLog";
 import TensionPanel from "@/components/feature/TensionPanel";
 import { Position, LogEntry, SystemConfig } from "@/types/motor";
 import { testConnection, moveToPosition, fetchSystemConfig } from "@/lib/api";
+import { usePresets } from "@/hooks/usePresets";
 
 const defaultPosition: Position = { x: 60, y: 42, z: 36 };
 
 export default function Home() {
+  const { presets, savePreset, deletePreset } = usePresets();
   const [config, setConfig] = useState<SystemConfig | null>(null);
   const [position, setPosition] = useState<Position>(defaultPosition);
   const [isConnected, setIsConnected] = useState(false);
@@ -92,11 +94,21 @@ export default function Home() {
             />
             <TensionPanel isConnected={isConnected} onLog={addLog} />
             <PresetList
+              currentPosition={position}
+              presets={presets}
               onLoadPreset={(preset) => {
                 setPosition(preset);
                 addLog(
                   `Loaded preset: X:${preset.x}, Y:${preset.y}, Z:${preset.z}`,
                 );
+              }}
+              onSavePreset={(preset) => {
+                savePreset(preset);
+                addLog(`Saved preset: ${preset.name}`);
+              }}
+              onDeletePreset={(name) => {
+                deletePreset(name);
+                addLog(`Deleted preset: ${name}`);
               }}
             />
           </div>

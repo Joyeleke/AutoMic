@@ -41,6 +41,12 @@ export interface SystemConfig {
     width: number;
     height: number;
     z_height: number;
+    motors: {
+      m1: [number, number, number];
+      m2: [number, number, number];
+      m3: [number, number, number];
+      m4: [number, number, number];
+    };
   };
 }
 
